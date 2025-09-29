@@ -9,14 +9,14 @@ n8n node for Berget AI chat/text models (Llama, Mistral, Qwen, GPT-OSS, etc.)
 1. Open n8n
 2. Go to **Settings** > **Community Nodes**
 3. Click **Install a community node**
-4. Enter: `n8n-nodes-berget-ai-chat`
+4. Enter: `@bergetai/n8n-nodes-berget-ai-chat`
 5. Click **Install**
 
 ### Manual Installation
 
 ```bash
 # In your n8n project
-npm install n8n-nodes-berget-ai-chat
+npm install @bergetai/n8n-nodes-berget-ai-chat
 ```
 
 ### Local Development
@@ -35,7 +35,7 @@ npm run build
 # Link locally for development
 npm link
 cd /path/to/your/n8n/project
-npm link n8n-nodes-berget-ai-chat
+npm link @bergetai/n8n-nodes-berget-ai-chat
 ```
 
 ## Configuration

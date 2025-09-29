@@ -9,7 +9,7 @@ n8n node for Berget AI speech-to-text models
 1. Open n8n
 2. Go to **Settings** > **Community Nodes**  
 3. Click **Install a community node**
-4. Enter: `n8n-nodes-berget-ai-speech`
+4. Enter: `@bergetai/n8n-nodes-berget-ai-speech`
 5. Click **Install**
 
 ## Available Models

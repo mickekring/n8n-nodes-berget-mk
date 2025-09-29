@@ -17,13 +17,13 @@ jobs:
     strategy:
       matrix:
         package:
-          - name: 'n8n-nodes-berget-ai-chat'
+          - name: '@bergetai/n8n-nodes-berget-ai-chat'
             path: 'n8n-nodes-berget-ai-chat'
-          - name: 'n8n-nodes-berget-ai-embeddings'
+          - name: '@bergetai/n8n-nodes-berget-ai-embeddings'
             path: 'n8n-nodes-berget-ai-embeddings'
-          - name: 'n8n-nodes-berget-ai-speech'
+          - name: '@bergetai/n8n-nodes-berget-ai-speech'
             path: 'n8n-nodes-berget-ai-speech'
-          - name: 'n8n-nodes-berget-ai-rerank'
+          - name: '@bergetai/n8n-nodes-berget-ai-rerank'
             path: 'n8n-nodes-berget-ai-rerank'
     
     steps:

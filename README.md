@@ -4,8 +4,8 @@ A collection of n8n community nodes for using Berget AI's open models in your wo
 
 ## Available Plugins
 
-### 🤖 Chat/Text Modeller
-**Package:** `n8n-nodes-berget-ai-chat`
+### 🤖 Chat/Text Models
+**Package:** `@bergetai/n8n-nodes-berget-ai-chat`
 
 Supports all Berget AI text/chat models:
 - Llama 3.1 8B Instruct
@@ -17,18 +17,18 @@ Supports all Berget AI text/chat models:
 - GPT-OSS-120B
 
 ### 🔍 Embeddings
-**Package:** `n8n-nodes-berget-ai-embeddings`
+**Package:** `@bergetai/n8n-nodes-berget-ai-embeddings`
 
 - Multilingual-E5-large-instruct
 - Multilingual-E5-large
 
 ### 🎤 Speech-to-Text
-**Package:** `n8n-nodes-berget-ai-speech`
+**Package:** `@bergetai/n8n-nodes-berget-ai-speech`
 
 - KB-Whisper-Large (Swedish Whisper)
 
 ### 📊 Reranking
-**Package:** `n8n-nodes-berget-ai-rerank`
+**Package:** `@bergetai/n8n-nodes-berget-ai-rerank`
 
 - bge-reranker-v2-m3
 
@@ -40,19 +40,19 @@ Supports all Berget AI text/chat models:
 2. Go to **Settings** > **Community Nodes**
 3. Click **Install a community node**
 4. Install the plugins you need:
-   - `n8n-nodes-berget-ai-chat`
-   - `n8n-nodes-berget-ai-embeddings`
-   - `n8n-nodes-berget-ai-speech`
-   - `n8n-nodes-berget-ai-rerank`
+   - `@bergetai/n8n-nodes-berget-ai-chat`
+   - `@bergetai/n8n-nodes-berget-ai-embeddings`
+   - `@bergetai/n8n-nodes-berget-ai-speech`
+   - `@bergetai/n8n-nodes-berget-ai-rerank`
 
 ### Via npm
 
 ```bash
-# Installera alla plugins
-npm install n8n-nodes-berget-ai-chat
-npm install n8n-nodes-berget-ai-embeddings  
-npm install n8n-nodes-berget-ai-speech
-npm install n8n-nodes-berget-ai-rerank
+# Install all plugins
+npm install @bergetai/n8n-nodes-berget-ai-chat
+npm install @bergetai/n8n-nodes-berget-ai-embeddings  
+npm install @bergetai/n8n-nodes-berget-ai-speech
+npm install @bergetai/n8n-nodes-berget-ai-rerank
 
 # Or install individually based on needs
 ```

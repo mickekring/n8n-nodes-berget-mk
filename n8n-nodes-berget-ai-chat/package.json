@@ -1,7 +1,7 @@
 {
-  "name": "n8n-nodes-berget-ai-chat",
+  "name": "@bergetai/n8n-nodes-berget-ai-chat",
   "version": "1.0.0",
-  "description": "n8n node för Berget AI chat/text modeller",
+  "description": "n8n node for Berget AI chat/text models",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -11,11 +11,14 @@
     "llm"
   ],
   "license": "MIT",
-  "homepage": "",
-  "author": "Berget AI",
+  "homepage": "https://github.com/bergetai/n8n-plugins",
+  "author": "Berget AI <kontakt@berget.ai>",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/bergetai/n8n-plugins.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "main": "index.js",
   "scripts": {

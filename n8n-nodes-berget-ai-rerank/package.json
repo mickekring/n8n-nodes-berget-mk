@@ -1,7 +1,7 @@
 {
-  "name": "n8n-nodes-berget-ai-rerank",
+  "name": "@bergetai/n8n-nodes-berget-ai-rerank",
   "version": "1.0.0",
-  "description": "n8n node för Berget AI rerank modeller",
+  "description": "n8n node for Berget AI rerank models",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -10,6 +10,15 @@
     "ai"
   ],
   "license": "MIT",
+  "homepage": "https://github.com/bergetai/n8n-plugins",
+  "author": "Berget AI <kontakt@berget.ai>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bergetai/n8n-plugins.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "index.js",
   "scripts": {
     "build": "tsc && gulp build:icons",
@@ -36,6 +45,5 @@
   },
   "dependencies": {
     "axios": "^1.6.0"
-  },
-  "author": "Berget AI"
+  }
 }
