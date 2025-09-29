@@ -1,0 +1,37 @@
+{
+  "name": "n8n-nodes-berget-ai-embeddings",
+  "version": "1.0.0",
+  "description": "n8n node för Berget AI embedding modeller",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "berget-ai",
+    "embeddings",
+    "ai"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/BergetAiApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/BergetAiEmbeddings/BergetAiEmbeddings.node.js"
+    ]
+  },
+  "devDependencies": {
+    "typescript": "^4.8.4",
+    "gulp": "^4.0.2"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
