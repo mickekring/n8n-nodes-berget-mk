@@ -12,10 +12,7 @@
   ],
   "license": "MIT",
   "homepage": "",
-  "author": {
-    "name": "Berget AI",
-    "email": ""
-  },
+  "author": "Berget AI",
   "repository": {
     "type": "git",
     "url": ""
@@ -45,11 +42,11 @@
     "@typescript-eslint/parser": "^5.45.0",
     "eslint-plugin-n8n-nodes-base": "^1.11.0",
     "gulp": "^4.0.2",
-    "n8n-workflow": "*",
+    "n8n-workflow": "^1.111.0",
     "prettier": "^2.7.1",
-    "typescript": "^4.8.4"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.12.2"
   }
 }
