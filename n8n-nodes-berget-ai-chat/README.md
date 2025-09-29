@@ -70,3 +70,7 @@ npm link n8n-nodes-berget-ai-chat
 ## Examples
 
 See `examples/` folder for examples of how to use the node in different scenarios.
+
+## Self-Hosted n8n
+
+Interested in running n8n in Sweden without data leaving EU? Berget AI offers self-hosted n8n solutions in our Kubernetes clusters. Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) for more information.

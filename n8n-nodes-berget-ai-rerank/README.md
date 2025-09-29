@@ -29,3 +29,7 @@ n8n node for Berget AI rerank models
 2. Configure API settings
 3. Enter query and documents to rank
 4. Get ranked results with relevance scores
+
+## Self-Hosted n8n
+
+Interested in running n8n in Sweden without data leaving EU? Berget AI offers self-hosted n8n solutions in our Kubernetes clusters. Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) for more information.

@@ -36,3 +36,7 @@ npm install n8n-nodes-berget-ai-embeddings
 2. Configure API settings
 3. Enter text to convert to embeddings
 4. Select embedding model
+
+## Self-Hosted n8n
+
+Interested in running n8n in Sweden without data leaving EU? Berget AI offers self-hosted n8n solutions in our Kubernetes clusters. Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) for more information.

@@ -71,6 +71,17 @@ See current pricing at [berget.ai/models](https://berget.ai/models)
 
 All prices are in EUR per million tokens, except speech-to-text which is per 1000 minutes.
 
+## Self-Hosted n8n
+
+Berget AI offers self-hosted n8n solutions in our Swedish Kubernetes clusters for organizations that need:
+
+- 🇸🇪 **Swedish hosting** - Keep your data within EU borders
+- 🔒 **Data sovereignty** - No data leakage outside EU
+- ⚡ **High performance** - Optimized Kubernetes infrastructure
+- 🛡️ **Enterprise security** - Full control over your n8n instance
+
+Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) if you're interested in Swedish hosting solutions.
+
 ## Support
 
 - 📧 Support: [kontakt@berget.ai](mailto:kontakt@berget.ai)
