@@ -7,6 +7,7 @@ import {
 } from 'n8n-workflow';
 
 import axios from 'axios';
+import * as FormData from 'form-data';
 
 export class BergetAiSpeech implements INodeType {
 	description: INodeTypeDescription = {
