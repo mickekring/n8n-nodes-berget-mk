@@ -14,7 +14,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc && gulp build:icons",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "npm run build && node test/test-node.js",
+    "test:local": "npm run build && npm link && echo 'Plugin linked! Start n8n with: n8n start'"
   },
   "files": [
     "dist"

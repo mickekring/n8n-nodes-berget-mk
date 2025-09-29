@@ -88,6 +88,34 @@ Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) if you're interested
 - 📖 API Documentation: [api.berget.ai/docs](https://api.berget.ai/docs)
 - 🐛 Issues: Report issues in respective plugin repository
 
+## Development & Testing
+
+### Quick Test
+```bash
+# Test node structure without API calls
+cd n8n-nodes-berget-ai-chat
+npm test
+
+# Test with real API (requires API key)
+BERGET_AI_API_KEY=your-key npm test
+```
+
+### Local Development
+```bash
+# Link plugin locally and test in n8n
+cd n8n-nodes-berget-ai-chat
+npm run test:local
+
+# In another terminal, start n8n
+npx n8n start
+```
+
+### Docker Testing
+```bash
+# Quick test with Docker
+docker run -it --rm -v $(pwd):/workspace -w /workspace/n8n-nodes-berget-ai-chat node:18 npm test
+```
+
 ## License
 
 MIT License - See LICENSE file in each plugin for details.

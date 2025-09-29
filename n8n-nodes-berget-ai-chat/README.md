@@ -71,6 +71,36 @@ npm link n8n-nodes-berget-ai-chat
 
 See `examples/` folder for examples of how to use the node in different scenarios.
 
+## Testing
+
+### Quick Test
+```bash
+# Test node structure
+npm test
+
+# Test with real API
+BERGET_AI_API_KEY=your-key npm test
+
+# Link locally for n8n testing
+npm run test:local
+```
+
+### Example Usage
+```javascript
+// Basic chat completion
+{
+  "operation": "chat",
+  "model": "meta-llama/Llama-3.1-8B-Instruct",
+  "messages": [
+    {"role": "user", "content": "Hello!"}
+  ],
+  "options": {
+    "temperature": 0.7,
+    "max_tokens": 100
+  }
+}
+```
+
 ## Self-Hosted n8n
 
 Interested in running n8n in Sweden without data leaving EU? Berget AI offers self-hosted n8n solutions in our Kubernetes clusters. Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) for more information.

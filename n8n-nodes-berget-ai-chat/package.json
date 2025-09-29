@@ -24,6 +24,8 @@
     "format": "prettier nodes --write",
     "lint": "eslint nodes package.json",
     "lintfix": "eslint nodes package.json --fix",
+    "test": "npm run build && node test/test-node.js",
+    "test:local": "npm run build && npm link && echo 'Plugin linked! Start n8n with: n8n start'",
     "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.js nodes package.json"
   },
   "files": [
