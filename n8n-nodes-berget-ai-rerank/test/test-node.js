@@ -1,16 +1,18 @@
-const { BergetAiChat } = require('../dist/nodes/BergetAiChat/BergetAiChat.node.js');
+const { BergetAiRerank } = require('../dist/nodes/BergetAiRerank/BergetAiRerank.node.js');
 
-// Mock n8n execution context
 const mockExecuteFunctions = {
-    getInputData: () => [{ json: { test: 'data' } }],
+    getInputData: () => [{ json: { query: 'test query' } }],
     getNodeParameter: (param, index, defaultValue) => {
         const params = {
-            'operation': 'chat',
-            'model': 'meta-llama/Llama-3.1-8B-Instruct',
-            'messages.values': [
-                { role: 'user', content: 'Hello, how are you?' }
+            'operation': 'rerank',
+            'model': 'BAAI/bge-reranker-v2-m3',
+            'query': 'What is artificial intelligence?',
+            'documents.values': [
+                { text: 'AI is a branch of computer science' },
+                { text: 'Machine learning is a subset of AI' },
+                { text: 'Deep learning uses neural networks' }
             ],
-            'options': { temperature: 0.7, max_tokens: 100 }
+            'options': { top_k: 3, return_documents: true }
         };
         return params[param] || defaultValue;
     },
@@ -18,27 +20,24 @@ const mockExecuteFunctions = {
         apiKey: process.env.BERGET_API_KEY || 'test-key'
     }),
     continueOnFail: () => false,
-    getNode: () => ({ name: 'Test Node' })
+    getNode: () => ({ name: 'Test Rerank Node' })
 };
 
 async function testNode() {
-    console.log('🧪 Testing Berget AI Chat Node...');
+    console.log('🧪 Testing Berget AI Rerank Node...');
     
     try {
-        const node = new BergetAiChat();
+        const node = new BergetAiRerank();
         console.log('✅ Node created successfully');
         console.log('📋 Node description:', node.description.displayName);
-        console.log('🔧 Available operations:', node.description.properties.find(p => p.name === 'operation').options.map(o => o.name));
         console.log('🤖 Available models:', node.description.properties.find(p => p.name === 'model').options.map(o => o.name));
         
-        // Test with mock API key (will fail but shows structure)
         if (process.env.BERGET_API_KEY) {
             console.log('🔑 API key found, testing actual execution...');
             const result = await node.execute.call(mockExecuteFunctions);
             console.log('✅ Execution successful:', result);
         } else {
             console.log('⚠️  No API key found. Set BERGET_API_KEY environment variable to test actual API calls.');
-            console.log('💡 Example: BERGET_API_KEY=your-key npm test');
         }
         
     } catch (error) {

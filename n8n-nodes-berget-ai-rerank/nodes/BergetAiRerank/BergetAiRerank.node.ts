@@ -182,7 +182,7 @@ export class BergetAiRerank implements INodeType {
 			} catch (error) {
 				if (this.continueOnFail()) {
 					returnData.push({
-						json: { error: error.message },
+						json: { error: error instanceof Error ? error.message : String(error) },
 						pairedItem: { item: i },
 					});
 					continue;

@@ -12,7 +12,7 @@ const mockExecuteFunctions = {
         return params[param] || defaultValue;
     },
     getCredentials: async () => ({
-        apiKey: process.env.BERGET_AI_API_KEY || 'test-key'
+        apiKey: process.env.BERGET_API_KEY || 'test-key'
     }),
     continueOnFail: () => false,
     getNode: () => ({ name: 'Test Embeddings Node' })
@@ -27,12 +27,12 @@ async function testNode() {
         console.log('📋 Node description:', node.description.displayName);
         console.log('🤖 Available models:', node.description.properties.find(p => p.name === 'model').options.map(o => o.name));
         
-        if (process.env.BERGET_AI_API_KEY) {
+        if (process.env.BERGET_API_KEY) {
             console.log('🔑 API key found, testing actual execution...');
             const result = await node.execute.call(mockExecuteFunctions);
             console.log('✅ Execution successful:', result);
         } else {
-            console.log('⚠️  No API key found. Set BERGET_AI_API_KEY environment variable to test actual API calls.');
+            console.log('⚠️  No API key found. Set BERGET_API_KEY environment variable to test actual API calls.');
         }
         
     } catch (error) {

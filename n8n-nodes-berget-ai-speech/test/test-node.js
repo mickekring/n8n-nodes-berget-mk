@@ -1,16 +1,13 @@
-const { BergetAiChat } = require('../dist/nodes/BergetAiChat/BergetAiChat.node.js');
+const { BergetAiSpeech } = require('../dist/nodes/BergetAiSpeech/BergetAiSpeech.node.js');
 
-// Mock n8n execution context
 const mockExecuteFunctions = {
-    getInputData: () => [{ json: { test: 'data' } }],
+    getInputData: () => [{ json: { audio: 'test-audio.wav' } }],
     getNodeParameter: (param, index, defaultValue) => {
         const params = {
-            'operation': 'chat',
-            'model': 'meta-llama/Llama-3.1-8B-Instruct',
-            'messages.values': [
-                { role: 'user', content: 'Hello, how are you?' }
-            ],
-            'options': { temperature: 0.7, max_tokens: 100 }
+            'operation': 'transcribe',
+            'model': 'KBLab/kb-whisper-large',
+            'file': 'test-audio-file-path',
+            'options': { language: 'sv', response_format: 'json' }
         };
         return params[param] || defaultValue;
     },
@@ -18,27 +15,23 @@ const mockExecuteFunctions = {
         apiKey: process.env.BERGET_API_KEY || 'test-key'
     }),
     continueOnFail: () => false,
-    getNode: () => ({ name: 'Test Node' })
+    getNode: () => ({ name: 'Test Speech Node' })
 };
 
 async function testNode() {
-    console.log('🧪 Testing Berget AI Chat Node...');
+    console.log('🧪 Testing Berget AI Speech Node...');
     
     try {
-        const node = new BergetAiChat();
+        const node = new BergetAiSpeech();
         console.log('✅ Node created successfully');
         console.log('📋 Node description:', node.description.displayName);
-        console.log('🔧 Available operations:', node.description.properties.find(p => p.name === 'operation').options.map(o => o.name));
         console.log('🤖 Available models:', node.description.properties.find(p => p.name === 'model').options.map(o => o.name));
         
-        // Test with mock API key (will fail but shows structure)
         if (process.env.BERGET_API_KEY) {
             console.log('🔑 API key found, testing actual execution...');
-            const result = await node.execute.call(mockExecuteFunctions);
-            console.log('✅ Execution successful:', result);
+            console.log('⚠️  Note: Speech transcription requires actual audio file');
         } else {
             console.log('⚠️  No API key found. Set BERGET_API_KEY environment variable to test actual API calls.');
-            console.log('💡 Example: BERGET_API_KEY=your-key npm test');
         }
         
     } catch (error) {

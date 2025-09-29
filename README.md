@@ -97,7 +97,7 @@ cd n8n-nodes-berget-ai-chat
 npm test
 
 # Test with real API (requires API key)
-BERGET_AI_API_KEY=your-key npm test
+BERGET_API_KEY=your-key npm test
 ```
 
 ### Local Development

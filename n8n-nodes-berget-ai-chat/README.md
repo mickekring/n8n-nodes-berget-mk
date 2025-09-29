@@ -79,7 +79,7 @@ See `examples/` folder for examples of how to use the node in different scenario
 npm test
 
 # Test with real API
-BERGET_AI_API_KEY=your-key npm test
+BERGET_API_KEY=your-key npm test
 
 # Link locally for n8n testing
 npm run test:local
