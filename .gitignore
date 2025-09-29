@@ -1,2 +1,6 @@
 .aider*
 node_modules
+<<<<<<< HEAD
+=======
+dist
+>>>>>>> 52520ba (fix: ignore dist folder)
