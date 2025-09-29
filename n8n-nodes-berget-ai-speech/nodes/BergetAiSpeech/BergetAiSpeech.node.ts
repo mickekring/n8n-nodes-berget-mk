@@ -16,7 +16,7 @@ export class BergetAiSpeech implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["model"]}}',
-		description: 'Använd Berget AI:s speech-to-text modeller',
+		description: 'Use Berget AI speech-to-text models',
 		defaults: {
 			name: 'Berget AI Speech',
 		},
@@ -42,7 +42,7 @@ export class BergetAiSpeech implements INodeType {
 					{
 						name: 'Transcribe Audio',
 						value: 'transcribe',
-						description: 'Transkribera audio till text',
+						description: 'Transcribe audio to text',
 						action: 'Transcribe audio to text',
 					},
 				],
@@ -59,21 +59,21 @@ export class BergetAiSpeech implements INodeType {
 					},
 				],
 				default: 'KBLab/kb-whisper-large',
-				description: 'Speech-to-text modell att använda',
+				description: 'Speech-to-text model to use',
 			},
 			{
 				displayName: 'Audio File',
 				name: 'file',
 				type: 'string',
 				default: '',
-				description: 'Path till audiofil eller base64-kodad audio data',
+				description: 'Path to audio file or base64-encoded audio data',
 				required: true,
 			},
 			{
 				displayName: 'Options',
 				name: 'options',
 				type: 'collection',
-				placeholder: 'Lägg till alternativ',
+				placeholder: 'Add options',
 				default: {},
 				options: [
 					{
@@ -81,7 +81,7 @@ export class BergetAiSpeech implements INodeType {
 						name: 'language',
 						type: 'string',
 						default: 'sv',
-						description: 'Språkkod (t.ex. "sv" för svenska)',
+						description: 'Language code (e.g. "sv" for Swedish)',
 					},
 					{
 						displayName: 'Response Format',
@@ -106,7 +106,7 @@ export class BergetAiSpeech implements INodeType {
 							},
 						],
 						default: 'json',
-						description: 'Format för transkriptionen',
+						description: 'Format for transcription',
 					},
 					{
 						displayName: 'Temperature',
@@ -118,7 +118,7 @@ export class BergetAiSpeech implements INodeType {
 							numberStepSize: 0.1,
 						},
 						default: 0,
-						description: 'Sampling temperature mellan 0 och 1',
+						description: 'Sampling temperature between 0 and 1',
 					},
 				],
 			},

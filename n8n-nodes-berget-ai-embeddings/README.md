@@ -1,38 +1,38 @@
 # n8n-nodes-berget-ai-embeddings
 
-n8n node för Berget AI:s embedding modeller
+n8n node for Berget AI embedding models
 
 ## Installation
 
-### Community Nodes (Rekommenderat)
+### Community Nodes (Recommended)
 
-1. Öppna n8n
-2. Gå till **Settings** > **Community Nodes**
-3. Klicka på **Install a community node**
-4. Ange: `n8n-nodes-berget-ai-embeddings`
-5. Klicka **Install**
+1. Open n8n
+2. Go to **Settings** > **Community Nodes**
+3. Click **Install a community node**
+4. Enter: `n8n-nodes-berget-ai-embeddings`
+5. Click **Install**
 
-### Manuell Installation
+### Manual Installation
 
 ```bash
 npm install n8n-nodes-berget-ai-embeddings
 ```
 
-## Tillgängliga Modeller
+## Available Models
 
 - Multilingual-E5-large-instruct
 - Multilingual-E5-large
 
-## Funktioner
+## Features
 
 - ✅ Text embeddings
 - ✅ Batch processing
-- ✅ Flerspråkigt stöd
-- ✅ Hög kvalitet embeddings
+- ✅ Multilingual support
+- ✅ High quality embeddings
 
-## Användning
+## Usage
 
-1. Lägg till noden i ditt workflow
-2. Konfigurera API-inställningar
-3. Ange text som ska konverteras till embeddings
-4. Välj embedding modell
+1. Add the node to your workflow
+2. Configure API settings
+3. Enter text to convert to embeddings
+4. Select embedding model

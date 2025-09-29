@@ -1,31 +1,31 @@
 # n8n-nodes-berget-ai-rerank
 
-n8n node för Berget AI:s rerank modeller
+n8n node for Berget AI rerank models
 
 ## Installation
 
-### Community Nodes (Rekommenderat)
+### Community Nodes (Recommended)
 
-1. Öppna n8n
-2. Gå till **Settings** > **Community Nodes**
-3. Klicka på **Install a community node**  
-4. Ange: `n8n-nodes-berget-ai-rerank`
-5. Klicka **Install**
+1. Open n8n
+2. Go to **Settings** > **Community Nodes**
+3. Click **Install a community node**  
+4. Enter: `n8n-nodes-berget-ai-rerank`
+5. Click **Install**
 
-## Tillgängliga Modeller
+## Available Models
 
 - bge-reranker-v2-m3 (BAAI)
 
-## Funktioner
+## Features
 
 - ✅ Document reranking
 - ✅ Relevance scoring
 - ✅ Batch processing
-- ✅ Flerspråkigt stöd
+- ✅ Multilingual support
 
-## Användning
+## Usage
 
-1. Lägg till noden i ditt workflow
-2. Konfigurera API-inställningar
-3. Ange query och dokument att ranka
-4. Få rankade resultat med relevance scores
+1. Add the node to your workflow
+2. Configure API settings
+3. Enter query and documents to rank
+4. Get ranked results with relevance scores

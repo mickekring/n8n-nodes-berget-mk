@@ -16,7 +16,7 @@ export class BergetAiChat implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["model"]}}',
-		description: 'Använd Berget AI:s chat/text modeller',
+		description: 'Use Berget AI chat/text models',
 		defaults: {
 			name: 'Berget AI Chat',
 		},
@@ -42,7 +42,7 @@ export class BergetAiChat implements INodeType {
 					{
 						name: 'Chat',
 						value: 'chat',
-						description: 'Skapa en chat completion',
+						description: 'Create a chat completion',
 						action: 'Create a chat completion',
 					},
 				],
@@ -83,7 +83,7 @@ export class BergetAiChat implements INodeType {
 					},
 				],
 				default: 'meta-llama/Llama-3.1-8B-Instruct',
-				description: 'Modell att använda för chat completion',
+				description: 'Model to use for chat completion',
 			},
 			{
 				displayName: 'Messages',
@@ -133,7 +133,7 @@ export class BergetAiChat implements INodeType {
 									rows: 2,
 								},
 								default: '',
-								description: 'Meddelandets innehåll',
+								description: 'Message content',
 							},
 						],
 					},
@@ -143,7 +143,7 @@ export class BergetAiChat implements INodeType {
 				displayName: 'Options',
 				name: 'options',
 				type: 'collection',
-				placeholder: 'Lägg till alternativ',
+				placeholder: 'Add options',
 				default: {},
 				options: [
 					{
@@ -156,21 +156,21 @@ export class BergetAiChat implements INodeType {
 							numberStepSize: 0.1,
 						},
 						default: 1,
-						description: 'Kontrollerar slumpmässighet i svaren. Lägre värden = mer deterministiskt.',
+						description: 'Controls randomness in responses. Lower values = more deterministic.',
 					},
 					{
 						displayName: 'Max Tokens',
 						name: 'max_tokens',
 						type: 'number',
 						default: 1000,
-						description: 'Maximalt antal tokens att generera',
+						description: 'Maximum number of tokens to generate',
 					},
 					{
 						displayName: 'Stream',
 						name: 'stream',
 						type: 'boolean',
 						default: false,
-						description: 'Om svaret ska streamas',
+						description: 'Whether to stream the response',
 					},
 					{
 						displayName: 'JSON Mode',
@@ -187,7 +187,7 @@ export class BergetAiChat implements INodeType {
 							},
 						],
 						default: 'text',
-						description: 'Format för svaret',
+						description: 'Response format',
 					},
 				],
 			},

@@ -16,7 +16,7 @@ export class BergetAiEmbeddings implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["model"]}}',
-		description: 'Använd Berget AI:s embedding modeller',
+		description: 'Use Berget AI embedding models',
 		defaults: {
 			name: 'Berget AI Embeddings',
 		},
@@ -42,7 +42,7 @@ export class BergetAiEmbeddings implements INodeType {
 					{
 						name: 'Create Embeddings',
 						value: 'embeddings',
-						description: 'Skapa embeddings från text',
+						description: 'Create embeddings from text',
 						action: 'Create embeddings from text',
 					},
 				],
@@ -63,7 +63,7 @@ export class BergetAiEmbeddings implements INodeType {
 					},
 				],
 				default: 'intfloat/multilingual-e5-large-instruct',
-				description: 'Embedding modell att använda',
+				description: 'Embedding model to use',
 			},
 			{
 				displayName: 'Input Text',
@@ -73,14 +73,14 @@ export class BergetAiEmbeddings implements INodeType {
 					rows: 4,
 				},
 				default: '',
-				description: 'Text att konvertera till embeddings',
+				description: 'Text to convert to embeddings',
 				required: true,
 			},
 			{
 				displayName: 'Options',
 				name: 'options',
 				type: 'collection',
-				placeholder: 'Lägg till alternativ',
+				placeholder: 'Add options',
 				default: {},
 				options: [
 					{
@@ -98,7 +98,7 @@ export class BergetAiEmbeddings implements INodeType {
 							},
 						],
 						default: 'float',
-						description: 'Format för embedding data',
+						description: 'Format for embedding data',
 					},
 				],
 			},

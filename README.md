@@ -1,13 +1,13 @@
 # Berget AI n8n Plugins
 
-En samling n8n community nodes för att använda Berget AI:s öppna modeller i dina workflows.
+A collection of n8n community nodes for using Berget AI's open models in your workflows.
 
-## Tillgängliga Plugins
+## Available Plugins
 
 ### 🤖 Chat/Text Modeller
 **Package:** `n8n-nodes-berget-ai-chat`
 
-Stöder alla Berget AI:s text/chat modeller:
+Supports all Berget AI text/chat models:
 - Llama 3.1 8B Instruct
 - Llama 3.3 70B Instruct  
 - DeepSeek R1 Microsoft AI Finetuned
@@ -25,21 +25,21 @@ Stöder alla Berget AI:s text/chat modeller:
 ### 🎤 Speech-to-Text
 **Package:** `n8n-nodes-berget-ai-speech`
 
-- KB-Whisper-Large (Svenskt Whisper)
+- KB-Whisper-Large (Swedish Whisper)
 
 ### 📊 Reranking
 **Package:** `n8n-nodes-berget-ai-rerank`
 
 - bge-reranker-v2-m3
 
-## Snabb Installation
+## Quick Installation
 
-### Via n8n Community Nodes (Rekommenderat)
+### Via n8n Community Nodes (Recommended)
 
-1. Öppna n8n
-2. Gå till **Settings** > **Community Nodes**
-3. Klicka **Install a community node**
-4. Installera de plugins du behöver:
+1. Open n8n
+2. Go to **Settings** > **Community Nodes**
+3. Click **Install a community node**
+4. Install the plugins you need:
    - `n8n-nodes-berget-ai-chat`
    - `n8n-nodes-berget-ai-embeddings`
    - `n8n-nodes-berget-ai-speech`
@@ -54,29 +54,29 @@ npm install n8n-nodes-berget-ai-embeddings
 npm install n8n-nodes-berget-ai-speech
 npm install n8n-nodes-berget-ai-rerank
 
-# Eller installera individuellt baserat på behov
+# Or install individually based on needs
 ```
 
-## API-nyckel
+## API Key
 
-Du behöver en API-nyckel från Berget AI för att använda dessa plugins:
+You need an API key from Berget AI to use these plugins:
 
-1. Registrera dig på [Berget AI](https://berget.ai)
-2. Skaffa din API-nyckel
-3. Konfigurera den i n8n credentials
+1. Register at [Berget AI](https://berget.ai)
+2. Get your API key
+3. Configure it in n8n credentials
 
-## Prissättning
+## Pricing
 
-Se aktuell prissättning på [api.berget.ai/v1/models](https://api.berget.ai/v1/models)
+See current pricing at [berget.ai/models](https://berget.ai/models)
 
-Alla priser är i EUR per miljon tokens, förutom speech-to-text som är per 1000 minuter.
+All prices are in EUR per million tokens, except speech-to-text which is per 1000 minutes.
 
 ## Support
 
 - 📧 Support: [kontakt@berget.ai](mailto:kontakt@berget.ai)
-- 📖 API Dokumentation: [api.berget.ai/docs](https://api.berget.ai/docs)
-- 🐛 Issues: Rapportera problem i respektive plugin repository
+- 📖 API Documentation: [api.berget.ai/docs](https://api.berget.ai/docs)
+- 🐛 Issues: Report issues in respective plugin repository
 
-## Licens
+## License
 
-MIT License - Se LICENSE fil i varje plugin för detaljer.
+MIT License - See LICENSE file in each plugin for details.

@@ -1,52 +1,52 @@
 # n8n-nodes-berget-ai-chat
 
-n8n node för Berget AI:s chat/text modeller (Llama, Mistral, Qwen, GPT-OSS, etc.)
+n8n node for Berget AI chat/text models (Llama, Mistral, Qwen, GPT-OSS, etc.)
 
 ## Installation
 
-### Community Nodes (Rekommenderat)
+### Community Nodes (Recommended)
 
-1. Öppna n8n
-2. Gå till **Settings** > **Community Nodes**
-3. Klicka på **Install a community node**
-4. Ange: `n8n-nodes-berget-ai-chat`
-5. Klicka **Install**
+1. Open n8n
+2. Go to **Settings** > **Community Nodes**
+3. Click **Install a community node**
+4. Enter: `n8n-nodes-berget-ai-chat`
+5. Click **Install**
 
-### Manuell Installation
+### Manual Installation
 
 ```bash
-# I ditt n8n projekt
+# In your n8n project
 npm install n8n-nodes-berget-ai-chat
 ```
 
-### Lokal Utveckling
+### Local Development
 
 ```bash
-# Klona detta repo
+# Clone this repo
 git clone <repo-url>
 cd n8n-nodes-berget-ai-chat
 
-# Installera dependencies
+# Install dependencies
 npm install
 
-# Bygg projektet
+# Build project
 npm run build
 
-# Länka lokalt för utveckling
+# Link locally for development
 npm link
 cd /path/to/your/n8n/project
 npm link n8n-nodes-berget-ai-chat
 ```
 
-## Konfiguration
+## Configuration
 
-1. Lägg till noden i ditt workflow
-2. Konfigurera API-inställningar:
-   - **API Key**: Din Berget AI API-nyckel
-   - **Base URL**: `https://api.berget.ai/v1` (standard)
-   - **Model**: Välj från tillgängliga modeller
+1. Add the node to your workflow
+2. Configure API settings:
+   - **API Key**: Your Berget AI API key
+   - **Base URL**: `https://api.berget.ai/v1` (default)
+   - **Model**: Choose from available models
 
-## Tillgängliga Modeller
+## Available Models
 
 - Llama 3.1 8B Instruct
 - Llama 3.3 70B Instruct  
@@ -57,16 +57,16 @@ npm link n8n-nodes-berget-ai-chat
 - Magistral-Small-2506
 - GPT-OSS-120B
 
-## Funktioner
+## Features
 
 - ✅ Chat completion
 - ✅ Streaming support
 - ✅ Function calling
 - ✅ JSON mode
 - ✅ Formatted output
-- ✅ System och user meddelanden
-- ✅ Temperature och andra parametrar
+- ✅ System and user messages
+- ✅ Temperature and other parameters
 
-## Exempel
+## Examples
 
-Se `examples/` mappen för exempel på hur du använder noden i olika scenarios.
+See `examples/` folder for examples of how to use the node in different scenarios.

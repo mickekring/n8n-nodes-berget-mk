@@ -17,7 +17,7 @@ export class BergetAiApi implements ICredentialType {
 			typeOptions: { password: true },
 			default: '',
 			required: true,
-			description: 'Din Berget AI API-nyckel',
+			description: 'Your Berget AI API key',
 		},
 	];
 

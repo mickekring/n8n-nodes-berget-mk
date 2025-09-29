@@ -1,31 +1,31 @@
 # n8n-nodes-berget-ai-speech
 
-n8n node för Berget AI:s speech-to-text modeller
+n8n node for Berget AI speech-to-text models
 
 ## Installation
 
-### Community Nodes (Rekommenderat)
+### Community Nodes (Recommended)
 
-1. Öppna n8n
-2. Gå till **Settings** > **Community Nodes**  
-3. Klicka på **Install a community node**
-4. Ange: `n8n-nodes-berget-ai-speech`
-5. Klicka **Install**
+1. Open n8n
+2. Go to **Settings** > **Community Nodes**  
+3. Click **Install a community node**
+4. Enter: `n8n-nodes-berget-ai-speech`
+5. Click **Install**
 
-## Tillgängliga Modeller
+## Available Models
 
-- KB-Whisper-Large (Svenskt Whisper från KBLab)
+- KB-Whisper-Large (Swedish Whisper from KBLab)
 
-## Funktioner
+## Features
 
-- ✅ Speech-to-text transkription
-- ✅ Svenskt språkstöd
-- ✅ Hög kvalitet audio processing
-- ✅ Stöd för olika audioformat
+- ✅ Speech-to-text transcription
+- ✅ Swedish language support
+- ✅ High quality audio processing
+- ✅ Support for various audio formats
 
-## Användning
+## Usage
 
-1. Lägg till noden i ditt workflow
-2. Konfigurera API-inställningar
-3. Ladda upp eller referera till audiofil
-4. Få transkriberad text som output
+1. Add the node to your workflow
+2. Configure API settings
+3. Upload or reference audio file
+4. Get transcribed text as output
