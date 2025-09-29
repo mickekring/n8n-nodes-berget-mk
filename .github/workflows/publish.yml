@@ -38,7 +38,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.package.path }}
-        run: npm ci
+        run: npm install
 
       - name: Update version
         working-directory: ${{ matrix.package.path }}
