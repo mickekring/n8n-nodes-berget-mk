@@ -319,11 +319,9 @@ export class BergetAiAgent implements INodeType {
 							
 							throw new NodeOperationError(
 								this.getNode(),
-								`Berget AI API error (${response.status}): ${errorMessage}`,
+								`Berget AI API error (${response.status}): ${errorMessage}. Check your API key and model availability`,
 								{ 
-									itemIndex: i,
-									httpCode: response.status,
-									description: 'Check your API key and model availability'
+									itemIndex: i
 								}
 							);
 						}
