@@ -16,6 +16,8 @@ Supports all Berget AI text/chat models:
 - Devstral Small 2505
 - GPT-OSS-120B
 
+See list of models here: [berget.ai/models](https://berget.ai/models)
+
 ### 🔍 Embeddings
 **Package:** `@bergetai/n8n-nodes-berget-ai-embeddings`
 
@@ -80,12 +82,12 @@ Berget AI offers self-hosted n8n solutions in our Swedish Kubernetes clusters fo
 - ⚡ **High performance** - Optimized Kubernetes infrastructure
 - 🛡️ **Enterprise security** - Full control over your n8n instance
 
-Contact us at [kontakt@berget.ai](mailto:kontakt@berget.ai) if you're interested in Swedish hosting solutions.
+Contact us at [hello@berget.ai](mailto:hello@berget.ai) if you're interested in Swedish hosting solutions.
 
 ## Support
 
-- 📧 Support: [kontakt@berget.ai](mailto:kontakt@berget.ai)
-- 📖 API Documentation: [api.berget.ai/docs](https://api.berget.ai/docs)
+- 📧 Support: [kontakt@berget.ai](mailto:hello@berget.ai)
+- 📖 API Documentation: [api.berget.ai](https://api.berget.ai)
 - 🐛 Issues: Report issues in respective plugin repository
 
 ## Development & Testing
