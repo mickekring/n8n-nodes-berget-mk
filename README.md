@@ -16,6 +16,17 @@ Supports all Berget AI text/chat models:
 - Devstral Small 2505
 - GPT-OSS-120B
 
+### 🤖 AI Agent (NEW!)
+**Package:** `@bergetai/n8n-nodes-berget-ai-agent`
+
+AI Agent with tool calling capabilities - similar to OpenAI Agent node:
+- Tool/function calling support
+- Multi-turn conversations
+- Autonomous task execution
+- Custom system prompts
+- Iteration control
+- All Berget AI chat models supported
+
 ### 🔍 Embeddings
 **Package:** `@bergetai/n8n-nodes-berget-ai-embeddings`
 
@@ -41,6 +52,7 @@ Supports all Berget AI text/chat models:
 3. Click **Install a community node**
 4. Install the plugins you need:
    - `@bergetai/n8n-nodes-berget-ai-chat`
+   - `@bergetai/n8n-nodes-berget-ai-agent`
    - `@bergetai/n8n-nodes-berget-ai-embeddings`
    - `@bergetai/n8n-nodes-berget-ai-speech`
    - `@bergetai/n8n-nodes-berget-ai-rerank`
@@ -50,6 +62,7 @@ Supports all Berget AI text/chat models:
 ```bash
 # Install all plugins
 npm install @bergetai/n8n-nodes-berget-ai-chat
+npm install @bergetai/n8n-nodes-berget-ai-agent
 npm install @bergetai/n8n-nodes-berget-ai-embeddings  
 npm install @bergetai/n8n-nodes-berget-ai-speech
 npm install @bergetai/n8n-nodes-berget-ai-rerank
