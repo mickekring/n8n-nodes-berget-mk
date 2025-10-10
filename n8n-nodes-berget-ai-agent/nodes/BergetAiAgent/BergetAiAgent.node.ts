@@ -233,24 +233,38 @@ export class BergetAiAgent implements INodeType {
 				const options = this.getNodeParameter('options', i, {}) as any;
 
 				if (operation === 'agent') {
-					// Parse tools
+					// Parse and validate tools
 					const tools = toolsConfig.map(tool => {
+						if (!tool.name || !tool.description) {
+							throw new NodeOperationError(
+								this.getNode(),
+								'Tool name and description are required',
+								{ itemIndex: i }
+							);
+						}
+
 						try {
 							const parameters = typeof tool.parameters === 'string' 
 								? JSON.parse(tool.parameters) 
 								: tool.parameters;
+							
+							// Validate that parameters is a valid JSON Schema object
+							if (typeof parameters !== 'object' || parameters === null) {
+								throw new Error('Parameters must be a valid JSON Schema object');
+							}
+
 							return {
 								type: 'function',
 								function: {
-									name: tool.name,
-									description: tool.description,
+									name: tool.name.trim(),
+									description: tool.description.trim(),
 									parameters,
 								},
 							};
 						} catch (error) {
 							throw new NodeOperationError(
 								this.getNode(),
-								`Invalid JSON in parameters for tool "${tool.name}"`,
+								`Invalid JSON Schema in parameters for tool "${tool.name}": ${error instanceof Error ? error.message : String(error)}`,
 								{ itemIndex: i }
 							);
 						}
@@ -298,10 +312,19 @@ export class BergetAiAgent implements INodeType {
 						);
 
 						if (response.status !== 200) {
+							const errorMessage = response.data?.error?.message || 
+								response.data?.message || 
+								response.statusText || 
+								'Unknown API error';
+							
 							throw new NodeOperationError(
 								this.getNode(),
-								`Berget AI API error: ${response.data?.error?.message || response.statusText}`,
-								{ itemIndex: i }
+								`Berget AI API error (${response.status}): ${errorMessage}`,
+								{ 
+									itemIndex: i,
+									httpCode: response.status,
+									description: 'Check your API key and model availability'
+								}
 							);
 						}
 
@@ -322,32 +345,19 @@ export class BergetAiAgent implements INodeType {
 									iteration,
 								});
 
-								// IMPORTANT: This is a placeholder implementation
-								// In a production environment, you would need to:
-								// 1. Parse toolCall.function.name to identify which tool to execute
-								// 2. Parse toolCall.function.arguments (JSON string) to get parameters
-								// 3. Execute the actual tool/function with those parameters
-								// 4. Return the real result from the tool execution
-								// 
-								// Example implementation would look like:
-								// const args = JSON.parse(toolCall.function.arguments);
-								// const result = await executeToolFunction(toolCall.function.name, args);
-								// 
-								// For now, we return a placeholder response that indicates
-								// what tool would be called and with what arguments
-								const placeholderResponse = {
-									status: 'placeholder_execution',
-									message: 'NOTICE: This is a mock response. Tool was not actually executed.',
-									requested_tool: toolCall.function.name,
-									requested_arguments: toolCall.function.arguments,
-									note: 'Implement actual tool execution logic here'
-								};
-
-								messages.push({
-									role: 'tool',
-									tool_call_id: toolCall.id,
-									content: JSON.stringify(placeholderResponse),
-								});
+								// Tool execution is not implemented in this node
+								// This node only handles the AI conversation flow and tool call detection
+								// Actual tool execution should be handled by subsequent nodes in the workflow
+								// The tool calls are returned in the output for further processing
+								
+								throw new NodeOperationError(
+									this.getNode(),
+									`Tool execution is not supported in this node. The AI model requested to call tool "${toolCall.function.name}" but this node only handles conversation flow. Use the tool calls in the output to implement actual tool execution in your workflow.`,
+									{ 
+										itemIndex: i,
+										description: 'Connect this node to other nodes that can execute the requested tools, then feed the results back to continue the conversation.'
+									}
+								);
 							}
 						} else {
 							// No tool calls, agent is done

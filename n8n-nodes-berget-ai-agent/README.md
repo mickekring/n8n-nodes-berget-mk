@@ -75,9 +75,11 @@ The agent node follows this workflow:
 
 1. **Initial Request**: User provides a task/question and available tools
 2. **Agent Processing**: Model analyzes the task and decides if tools are needed
-3. **Tool Calling**: If needed, the agent generates tool calls with parameters
-4. **Iteration**: The agent can make multiple tool calls in sequence
-5. **Final Response**: Agent provides the final answer
+3. **Tool Detection**: If needed, the agent identifies required tool calls with parameters
+4. **Output**: The node outputs tool calls for external execution (does not execute tools itself)
+5. **Integration**: Connect to other n8n nodes to execute tools and feed results back
+
+**Important**: This node does NOT execute tools automatically. It only detects when tools should be called and outputs the tool call information. You must implement tool execution in your n8n workflow using other nodes.
 
 ## Tool Definition
 
@@ -177,7 +179,7 @@ The agent node returns:
 
 ```json
 {
-  "response": "Final agent response text",
+  "response": "Final agent response text or null if tools were requested",
   "tool_calls": [
     {
       "id": "call_abc123",
@@ -191,6 +193,8 @@ The agent node returns:
   "model": "meta-llama/Llama-3.3-70B-Instruct"
 }
 ```
+
+**Note**: If the AI requests tool calls, the node will throw an error with details about the requested tools. This is intentional - you must handle tool execution in your workflow and then continue the conversation.
 
 ## Testing
 

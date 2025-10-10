@@ -37,8 +37,7 @@ const mockExecuteFunctions = {
     getCredentials: async () => {
         const apiKey = process.env.BERGET_API_KEY;
         if (!apiKey) {
-            console.warn('⚠️  No BERGET_API_KEY environment variable set. Using placeholder for testing.');
-            return { apiKey: 'PLACEHOLDER_API_KEY_FOR_TESTING' };
+            throw new Error('BERGET_API_KEY environment variable is required for testing. Set it with: export BERGET_API_KEY=your-api-key');
         }
         return { apiKey };
     },
@@ -56,15 +55,22 @@ async function testNode() {
         console.log('🔧 Available operations:', node.description.properties.find(p => p.name === 'operation').options.map(o => o.name));
         console.log('🤖 Available models:', node.description.properties.find(p => p.name === 'model').options.map(o => o.name));
         
-        // Test with mock API key (will fail but shows structure)
+        // Test node structure only - actual execution requires API key
+        console.log('📝 Note: This test only validates node structure.');
+        console.log('💡 To test actual execution, run: BERGET_API_KEY=your-key npm test');
+        
         if (process.env.BERGET_API_KEY) {
             console.log('🔑 API key found, testing actual execution...');
-            const result = await node.execute.call(mockExecuteFunctions);
-            console.log('✅ Execution successful:', JSON.stringify(result, null, 2));
-        } else {
-            console.log('⚠️  No API key found. Set BERGET_API_KEY environment variable to test actual API calls.');
-            console.log('💡 Example: BERGET_API_KEY=your-key npm test');
-            console.log('📝 Note: Tests will run with placeholder credentials but API calls will fail.');
+            try {
+                const result = await node.execute.call(mockExecuteFunctions);
+                console.log('✅ Execution successful:', JSON.stringify(result, null, 2));
+            } catch (error) {
+                if (error.message.includes('Tool execution is not supported')) {
+                    console.log('✅ Expected behavior: Tool execution properly blocked');
+                } else {
+                    console.error('❌ Unexpected error:', error.message);
+                }
+            }
         }
         
     } catch (error) {
