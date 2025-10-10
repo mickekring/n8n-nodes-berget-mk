@@ -1,10 +1,4 @@
 {
-  "devDependencies": {
-    "gulp-cli": "^3.1.0",
-    "typescript": "^5.9.3"
-  }
-}
-{
   "name": "n8n-berget-ai-plugins",
   "version": "1.0.0",
   "description": "Berget AI plugins for n8n - complete collection",
