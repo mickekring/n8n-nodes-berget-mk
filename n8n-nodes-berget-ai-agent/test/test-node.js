@@ -34,9 +34,14 @@ const mockExecuteFunctions = {
         };
         return params[param] || defaultValue;
     },
-    getCredentials: async () => ({
-        apiKey: process.env.BERGET_API_KEY || 'test-key'
-    }),
+    getCredentials: async () => {
+        const apiKey = process.env.BERGET_API_KEY;
+        if (!apiKey) {
+            console.warn('⚠️  No BERGET_API_KEY environment variable set. Using placeholder for testing.');
+            return { apiKey: 'PLACEHOLDER_API_KEY_FOR_TESTING' };
+        }
+        return { apiKey };
+    },
     continueOnFail: () => false,
     getNode: () => ({ name: 'Test Agent Node' })
 };
@@ -59,6 +64,7 @@ async function testNode() {
         } else {
             console.log('⚠️  No API key found. Set BERGET_API_KEY environment variable to test actual API calls.');
             console.log('💡 Example: BERGET_API_KEY=your-key npm test');
+            console.log('📝 Note: Tests will run with placeholder credentials but API calls will fail.');
         }
         
     } catch (error) {

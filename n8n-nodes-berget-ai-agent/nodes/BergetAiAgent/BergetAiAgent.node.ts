@@ -322,17 +322,31 @@ export class BergetAiAgent implements INodeType {
 									iteration,
 								});
 
-								// Add tool response placeholder
-								// In a real implementation, this would execute the tool
-								// For now, we return a message indicating the tool would be called
+								// IMPORTANT: This is a placeholder implementation
+								// In a production environment, you would need to:
+								// 1. Parse toolCall.function.name to identify which tool to execute
+								// 2. Parse toolCall.function.arguments (JSON string) to get parameters
+								// 3. Execute the actual tool/function with those parameters
+								// 4. Return the real result from the tool execution
+								// 
+								// Example implementation would look like:
+								// const args = JSON.parse(toolCall.function.arguments);
+								// const result = await executeToolFunction(toolCall.function.name, args);
+								// 
+								// For now, we return a placeholder response that indicates
+								// what tool would be called and with what arguments
+								const placeholderResponse = {
+									status: 'placeholder_execution',
+									message: 'NOTICE: This is a mock response. Tool was not actually executed.',
+									requested_tool: toolCall.function.name,
+									requested_arguments: toolCall.function.arguments,
+									note: 'Implement actual tool execution logic here'
+								};
+
 								messages.push({
 									role: 'tool',
 									tool_call_id: toolCall.id,
-									content: JSON.stringify({
-										message: 'Tool execution would happen here',
-										tool_name: toolCall.function.name,
-										arguments: toolCall.function.arguments,
-									}),
+									content: JSON.stringify(placeholderResponse),
 								});
 							}
 						} else {
