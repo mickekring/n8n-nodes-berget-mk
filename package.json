@@ -4,3 +4,68 @@
     "typescript": "^5.9.3"
   }
 }
+{
+  "name": "n8n-berget-ai-plugins",
+  "version": "1.0.0",
+  "description": "Berget AI plugins for n8n - complete collection",
+  "private": true,
+  "workspaces": [
+    "n8n-nodes-berget-ai-agent",
+    "n8n-nodes-berget-ai-chat",
+    "n8n-nodes-berget-ai-embeddings",
+    "n8n-nodes-berget-ai-rerank",
+    "n8n-nodes-berget-ai-speech"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm run install:workspaces",
+    "install:workspaces": "npm install --workspaces",
+    "build": "npm run build --workspaces",
+    "build:agent": "npm run build --workspace=n8n-nodes-berget-ai-agent",
+    "build:chat": "npm run build --workspace=n8n-nodes-berget-ai-chat",
+    "build:embeddings": "npm run build --workspace=n8n-nodes-berget-ai-embeddings",
+    "build:rerank": "npm run build --workspace=n8n-nodes-berget-ai-rerank",
+    "build:speech": "npm run build --workspace=n8n-nodes-berget-ai-speech",
+    "test": "npm run test --workspaces",
+    "test:agent": "npm run test --workspace=n8n-nodes-berget-ai-agent",
+    "test:chat": "npm run test --workspace=n8n-nodes-berget-ai-chat",
+    "test:embeddings": "npm run test --workspace=n8n-nodes-berget-ai-embeddings",
+    "test:rerank": "npm run test --workspace=n8n-nodes-berget-ai-rerank",
+    "test:speech": "npm run test --workspace=n8n-nodes-berget-ai-speech",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+    "dev": "npm run dev --workspaces --if-present",
+    "link:all": "npm run test:local --workspaces --if-present",
+    "publish:all": "npm publish --workspaces --access public",
+    "version:patch": "npm version patch --workspaces",
+    "version:minor": "npm version minor --workspaces",
+    "version:major": "npm version major --workspaces"
+  },
+  "keywords": [
+    "n8n",
+    "berget-ai",
+    "ai",
+    "llm",
+    "agent",
+    "chat",
+    "embeddings",
+    "rerank",
+    "speech",
+    "tools"
+  ],
+  "author": "Berget AI <kontakt@berget.ai>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bergetai/n8n-plugins.git"
+  },
+  "homepage": "https://github.com/bergetai/n8n-plugins",
+  "devDependencies": {
+    "typescript": "^4.9.5",
+    "gulp-cli": "^2.3.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
