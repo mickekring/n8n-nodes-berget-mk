@@ -15,8 +15,9 @@ Supports all Berget AI text/chat models:
 - Qwen3 32B
 - Devstral Small 2505
 - GPT-OSS-120B
+- ...
 
-See list of models here: [berget.ai/models](https://berget.ai/models)
+See a complete list of models here: [berget.ai/models](https://berget.ai/models)
 
 ### 🔍 Embeddings
 **Package:** `@bergetai/n8n-nodes-berget-ai-embeddings`
@@ -43,6 +44,7 @@ See list of models here: [berget.ai/models](https://berget.ai/models)
 3. Click **Install a community node**
 4. Install the plugins you need:
    - `@bergetai/n8n-nodes-berget-ai-chat`
+   - `@bergetai/n8n-nodes-berget-ai-agent`
    - `@bergetai/n8n-nodes-berget-ai-embeddings`
    - `@bergetai/n8n-nodes-berget-ai-speech`
    - `@bergetai/n8n-nodes-berget-ai-rerank`
@@ -52,6 +54,7 @@ See list of models here: [berget.ai/models](https://berget.ai/models)
 ```bash
 # Install all plugins
 npm install @bergetai/n8n-nodes-berget-ai-chat
+npm install @bergetai/n8n-nodes-berget-ai-agent
 npm install @bergetai/n8n-nodes-berget-ai-embeddings  
 npm install @bergetai/n8n-nodes-berget-ai-speech
 npm install @bergetai/n8n-nodes-berget-ai-rerank
