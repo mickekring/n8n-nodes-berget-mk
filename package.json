@@ -55,8 +55,7 @@
   },
   "homepage": "https://github.com/bergetai/n8n-plugins",
   "devDependencies": {
-    "typescript": "^4.9.5",
-    "gulp-cli": "^2.3.0"
+    "typescript": "^4.9.5"
   },
   "engines": {
     "node": ">=18.0.0",
