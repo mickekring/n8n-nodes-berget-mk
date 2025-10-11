@@ -51,38 +51,12 @@ class BergetAiChat {
                     displayName: 'Model',
                     name: 'model',
                     type: 'options',
-                    options: [
-                        {
-                            name: 'Llama 3.1 8B Instruct',
-                            value: 'meta-llama/Llama-3.1-8B-Instruct',
-                        },
-                        {
-                            name: 'Llama 3.3 70B Instruct',
-                            value: 'meta-llama/Llama-3.3-70B-Instruct',
-                        },
-                        {
-                            name: 'DeepSeek R1 Microsoft AI Finetuned',
-                            value: 'unsloth/MAI-DS-R1-GGUF',
-                        },
-                        {
-                            name: 'Mistral Small 3.1 24B Instruct 2503',
-                            value: 'mistralai/Mistral-Small-3.1-24B-Instruct-2503',
-                        },
-                        {
-                            name: 'Qwen3 32B',
-                            value: 'Qwen/Qwen3-32B',
-                        },
-                        {
-                            name: 'Devstral Small 2505',
-                            value: 'mistralai/Devstral-Small-2505',
-                        },
-                        {
-                            name: 'GPT-OSS-120B',
-                            value: 'openai/gpt-oss-120b',
-                        },
-                    ],
-                    default: 'meta-llama/Llama-3.1-8B-Instruct',
+                    typeOptions: {
+                        loadOptionsMethod: 'getModels',
+                    },
+                    default: '',
                     description: 'Model to use for chat completion',
+                    required: true,
                 },
                 {
                     displayName: 'Messages',
@@ -191,6 +165,44 @@ class BergetAiChat {
                     ],
                 },
             ],
+        };
+        this.methods = {
+            loadOptions: {
+                async getModels() {
+                    try {
+                        const credentials = await this.getCredentials('bergetAiApi');
+                        const response = await axios_1.default.get('https://api.berget.ai/v1/models', {
+                            headers: {
+                                'Authorization': `Bearer ${credentials.apiKey}`,
+                                'Content-Type': 'application/json',
+                            },
+                        });
+                        if (response.status !== 200) {
+                            throw new Error(`API error: ${response.statusText}`);
+                        }
+                        // Filter models that support chat completions
+                        const models = response.data.data || [];
+                        const chatModels = models.filter((model) => {
+                            const modelId = model.id || '';
+                            return modelId.includes('llama') ||
+                                modelId.includes('mistral') ||
+                                modelId.includes('qwen') ||
+                                modelId.includes('deepseek') ||
+                                modelId.includes('gpt') ||
+                                modelId.toLowerCase().includes('instruct') ||
+                                modelId.toLowerCase().includes('chat');
+                        });
+                        return chatModels.map((model) => ({
+                            name: model.id,
+                            value: model.id,
+                            description: `${model.id}${model.owned_by ? ` (${model.owned_by})` : ''}`,
+                        })).sort((a, b) => a.name.localeCompare(b.name));
+                    }
+                    catch (error) {
+                        throw new Error(`Failed to load models from Berget AI API. Please check your API key and network connection. Error: ${error instanceof Error ? error.message : String(error)}`);
+                    }
+                },
+            },
         };
     }
     async execute() {
