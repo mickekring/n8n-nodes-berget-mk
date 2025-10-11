@@ -1,5 +1,5 @@
 {
-  "name": "@bergetai/n8n-nodes",
+  "name": "@bergetai/n8n-nodes-all",
   "version": "1.0.0",
   "description": "Complete collection of Berget AI n8n nodes - AI chat, agent, embeddings, OCR, speech, and rerank",
   "keywords": [

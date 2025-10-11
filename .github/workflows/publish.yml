@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         package:
-          - name: '@bergetai/n8n-nodes'
+          - name: '@bergetai/n8n-nodes-all'
             path: '.'
           - name: '@bergetai/n8n-nodes-berget-ai-agent'
             path: 'n8n-nodes-berget-ai-agent'
@@ -101,7 +101,7 @@ jobs:
             Release av alla Berget AI n8n plugins
             
             ## Huvudpaket (rekommenderat)
-            - **@bergetai/n8n-nodes** - Installerar alla noder på en gång
+            - **@bergetai/n8n-nodes-all** - Installerar alla noder på en gång
             
             ## Individuella paket som publicerats:
             - @bergetai/n8n-nodes-berget-ai-agent
@@ -114,7 +114,7 @@ jobs:
             ## Installation
             ```bash
             # Installera alla noder på en gång (rekommenderat)
-            npm install @bergetai/n8n-nodes
+            npm install @bergetai/n8n-nodes-all
             
             # Eller installera individuellt
             npm install @bergetai/n8n-nodes-berget-ai-agent

@@ -1,4 +1,4 @@
-# @bergetai/n8n-nodes
+# @bergetai/n8n-nodes-all
 
 **Complete collection of Berget AI n8n nodes**
 
@@ -62,7 +62,7 @@ Extract text from documents:
 1. Open n8n
 2. Go to **Settings** > **Community Nodes**
 3. Click **Install a community node**
-4. Enter: `@bergetai/n8n-nodes`
+4. Enter: `@bergetai/n8n-nodes-all`
 5. Click **Install**
 
 That's it! All Berget AI nodes are now available in your n8n instance.
@@ -71,7 +71,7 @@ That's it! All Berget AI nodes are now available in your n8n instance.
 
 ```bash
 # Install all nodes at once
-npm install @bergetai/n8n-nodes
+npm install @bergetai/n8n-nodes-all
 ```
 
 ### Individual Installation
