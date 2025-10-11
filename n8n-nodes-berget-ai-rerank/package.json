@@ -21,8 +21,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "tsc && npm run build:icons",
-    "build:icons": "mkdir -p dist/nodes && cp -r nodes/**/*.svg dist/nodes/ 2>/dev/null || true",
+    "build": "tsc",
     "dev": "tsc --watch",
     "test": "npm run build && node test/test-node.js",
     "test:local": "npm run build && npm link && echo 'Plugin linked! Start n8n with: n8n start'",
