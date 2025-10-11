@@ -1,8 +1,31 @@
 {
-  "name": "n8n-berget-ai-plugins",
+  "name": "@bergetai/n8n-nodes",
   "version": "1.0.0",
-  "description": "Berget AI plugins for n8n - complete collection",
-  "private": true,
+  "description": "Complete collection of Berget AI n8n nodes - AI chat, agent, embeddings, OCR, speech, and rerank",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "berget-ai",
+    "ai",
+    "llm",
+    "agent",
+    "chat",
+    "embeddings",
+    "ocr",
+    "speech",
+    "rerank",
+    "tools"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/bergetai/n8n-plugins",
+  "author": "Berget AI <kontakt@berget.ai>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bergetai/n8n-plugins.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "workspaces": [
     "n8n-nodes-berget-ai-agent",
     "n8n-nodes-berget-ai-chat",
@@ -38,27 +61,19 @@
     "version:minor": "npm version minor --workspaces",
     "version:major": "npm version major --workspaces"
   },
-  "keywords": [
-    "n8n",
-    "berget-ai",
-    "ai",
-    "llm",
-    "agent",
-    "chat",
-    "embeddings",
-    "rerank",
-    "speech",
-    "tools"
-  ],
-  "author": "Berget AI <kontakt@berget.ai>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/bergetai/n8n-plugins.git"
+  "dependencies": {
+    "@bergetai/n8n-nodes-berget-ai-agent": "^1.0.0",
+    "@bergetai/n8n-nodes-berget-ai-chat": "^1.0.0",
+    "@bergetai/n8n-nodes-berget-ai-embeddings": "^1.0.0",
+    "@bergetai/n8n-nodes-berget-ai-ocr": "^1.0.0",
+    "@bergetai/n8n-nodes-berget-ai-rerank": "^1.0.0",
+    "@bergetai/n8n-nodes-berget-ai-speech": "^1.0.0"
   },
-  "homepage": "https://github.com/bergetai/n8n-plugins",
   "devDependencies": {
     "typescript": "^4.9.5"
+  },
+  "peerDependencies": {
+    "n8n-workflow": ">=1.0.0"
   },
   "engines": {
     "node": ">=18.0.0",
