@@ -150,7 +150,7 @@ Contact us at [hello@berget.ai](mailto:hello@berget.ai) if you're interested in 
 
 ## Support
 
-- 📧 Support: [kontakt@berget.ai](mailto:kontakt@berget.ai)
+- 📧 Support: [hello@berget.ai](mailto:hello@berget.ai)
 - 📖 API Documentation: [api.berget.ai/docs](https://api.berget.ai/docs)
 - 🐛 Issues: Report issues in the [GitHub repository](https://github.com/bergetai/n8n-plugins)
 
