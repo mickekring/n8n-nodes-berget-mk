@@ -230,20 +230,7 @@ export class BergetAiAgent implements INodeType {
 					})).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
 				} catch (error) {
-					// Fallback to hardcoded models if API call fails
-					console.warn('Failed to load models from API, using fallback list:', error);
-					return [
-						{
-							name: 'meta-llama/Llama-3.3-70B-Instruct',
-							value: 'meta-llama/Llama-3.3-70B-Instruct',
-							description: 'Llama 3.3 70B Instruct (fallback)',
-						},
-						{
-							name: 'meta-llama/Llama-3.1-8B-Instruct',
-							value: 'meta-llama/Llama-3.1-8B-Instruct',
-							description: 'Llama 3.1 8B Instruct (fallback)',
-						},
-					];
+					throw new Error(`Failed to load models from Berget AI API. Please check your API key and network connection. Error: ${error instanceof Error ? error.message : String(error)}`);
 				}
 			},
 		},
