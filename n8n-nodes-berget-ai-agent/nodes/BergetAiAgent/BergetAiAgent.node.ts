@@ -1,6 +1,9 @@
 import {
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodeListSearchResult,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	NodeOperationError,
@@ -52,38 +55,12 @@ export class BergetAiAgent implements INodeType {
 				displayName: 'Model',
 				name: 'model',
 				type: 'options',
-				options: [
-					{
-						name: 'Llama 3.1 8B Instruct',
-						value: 'meta-llama/Llama-3.1-8B-Instruct',
-					},
-					{
-						name: 'Llama 3.3 70B Instruct',
-						value: 'meta-llama/Llama-3.3-70B-Instruct',
-					},
-					{
-						name: 'DeepSeek R1 Microsoft AI Finetuned',
-						value: 'unsloth/MAI-DS-R1-GGUF',
-					},
-					{
-						name: 'Mistral Small 3.1 24B Instruct 2503',
-						value: 'mistralai/Mistral-Small-3.1-24B-Instruct-2503',
-					},
-					{
-						name: 'Qwen3 32B',
-						value: 'Qwen/Qwen3-32B',
-					},
-					{
-						name: 'Devstral Small 2505',
-						value: 'mistralai/Devstral-Small-2505',
-					},
-					{
-						name: 'GPT-OSS-120B',
-						value: 'openai/gpt-oss-120b',
-					},
-				],
-				default: 'meta-llama/Llama-3.3-70B-Instruct',
+				typeOptions: {
+					loadOptionsMethod: 'getModels',
+				},
+				default: '',
 				description: 'Model to use for the agent',
+				required: true,
 			},
 			{
 				displayName: 'System Prompt',
@@ -212,6 +189,64 @@ export class BergetAiAgent implements INodeType {
 				],
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = await this.getCredentials('bergetAiApi');
+					
+					const response = await axios.get('https://api.berget.ai/v1/models', {
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+					});
+
+					if (response.status !== 200) {
+						throw new Error(`API error: ${response.statusText}`);
+					}
+
+					// Filter models that support chat completions and tool calling
+					const models = response.data.data || [];
+					const chatModels = models.filter((model: any) => {
+						// Filter for models that support chat completions
+						// Most text/chat models support tool calling
+						const modelId = model.id || '';
+						return modelId.includes('llama') || 
+							   modelId.includes('mistral') || 
+							   modelId.includes('qwen') || 
+							   modelId.includes('deepseek') || 
+							   modelId.includes('gpt') ||
+							   modelId.toLowerCase().includes('instruct') ||
+							   modelId.toLowerCase().includes('chat');
+					});
+
+					return chatModels.map((model: any) => ({
+						name: model.id,
+						value: model.id,
+						description: `${model.id}${model.owned_by ? ` (${model.owned_by})` : ''}`,
+					})).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+				} catch (error) {
+					// Fallback to hardcoded models if API call fails
+					console.warn('Failed to load models from API, using fallback list:', error);
+					return [
+						{
+							name: 'meta-llama/Llama-3.3-70B-Instruct',
+							value: 'meta-llama/Llama-3.3-70B-Instruct',
+							description: 'Llama 3.3 70B Instruct (fallback)',
+						},
+						{
+							name: 'meta-llama/Llama-3.1-8B-Instruct',
+							value: 'meta-llama/Llama-3.1-8B-Instruct',
+							description: 'Llama 3.1 8B Instruct (fallback)',
+						},
+					];
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
