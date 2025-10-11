@@ -17,6 +17,8 @@ jobs:
     strategy:
       matrix:
         package:
+          - name: '@bergetai/n8n-nodes'
+            path: '.'
           - name: '@bergetai/n8n-nodes-berget-ai-agent'
             path: 'n8n-nodes-berget-ai-agent'
           - name: '@bergetai/n8n-nodes-berget-ai-chat'
@@ -98,7 +100,10 @@ jobs:
           body: |
             Release av alla Berget AI n8n plugins
             
-            ## Paket som publicerats:
+            ## Huvudpaket (rekommenderat)
+            - **@bergetai/n8n-nodes** - Installerar alla noder på en gång
+            
+            ## Individuella paket som publicerats:
             - @bergetai/n8n-nodes-berget-ai-agent
             - @bergetai/n8n-nodes-berget-ai-chat
             - @bergetai/n8n-nodes-berget-ai-embeddings
@@ -108,13 +113,13 @@ jobs:
             
             ## Installation
             ```bash
-            # Installera alla paket
+            # Installera alla noder på en gång (rekommenderat)
+            npm install @bergetai/n8n-nodes
+            
+            # Eller installera individuellt
             npm install @bergetai/n8n-nodes-berget-ai-agent
             npm install @bergetai/n8n-nodes-berget-ai-chat
-            npm install @bergetai/n8n-nodes-berget-ai-embeddings
-            npm install @bergetai/n8n-nodes-berget-ai-ocr
-            npm install @bergetai/n8n-nodes-berget-ai-speech
-            npm install @bergetai/n8n-nodes-berget-ai-rerank
+            # ... etc
             ```
             
             ## Dokumentation
