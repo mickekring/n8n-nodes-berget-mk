@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16, 18, 20]
+        node-version: [18, 20]
         package:
           - name: 'n8n-nodes-berget-ai-agent'
             path: 'n8n-nodes-berget-ai-agent'
@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.package.path }}
-        run: npm ci
+        run: npm install
 
       - name: Run security audit
         working-directory: ${{ matrix.package.path }}

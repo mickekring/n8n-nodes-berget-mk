@@ -40,7 +40,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.package.path }}
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Update version
         working-directory: ${{ matrix.package.path }}
