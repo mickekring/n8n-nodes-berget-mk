@@ -23,6 +23,8 @@ jobs:
             path: 'n8n-nodes-berget-ai-chat'
           - name: '@bergetai/n8n-nodes-berget-ai-embeddings'
             path: 'n8n-nodes-berget-ai-embeddings'
+          - name: '@bergetai/n8n-nodes-berget-ai-ocr'
+            path: 'n8n-nodes-berget-ai-ocr'
           - name: '@bergetai/n8n-nodes-berget-ai-speech'
             path: 'n8n-nodes-berget-ai-speech'
           - name: '@bergetai/n8n-nodes-berget-ai-rerank'
@@ -100,6 +102,7 @@ jobs:
             - @bergetai/n8n-nodes-berget-ai-agent
             - @bergetai/n8n-nodes-berget-ai-chat
             - @bergetai/n8n-nodes-berget-ai-embeddings
+            - @bergetai/n8n-nodes-berget-ai-ocr
             - @bergetai/n8n-nodes-berget-ai-speech
             - @bergetai/n8n-nodes-berget-ai-rerank
             
@@ -109,6 +112,7 @@ jobs:
             npm install @bergetai/n8n-nodes-berget-ai-agent
             npm install @bergetai/n8n-nodes-berget-ai-chat
             npm install @bergetai/n8n-nodes-berget-ai-embeddings
+            npm install @bergetai/n8n-nodes-berget-ai-ocr
             npm install @bergetai/n8n-nodes-berget-ai-speech
             npm install @bergetai/n8n-nodes-berget-ai-rerank
             ```

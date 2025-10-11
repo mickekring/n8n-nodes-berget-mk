@@ -19,11 +19,29 @@ Supports all Berget AI text/chat models:
 
 See a complete list of models here: [berget.ai/models](https://berget.ai/models)
 
+### 🤖 AI Agent
+**Package:** `@bergetai/n8n-nodes-berget-ai-agent`
+
+Advanced AI agent with tool calling capabilities:
+- Multi-turn conversations
+- Tool/function calling
+- Custom system prompts
+- Iteration control
+
 ### 🔍 Embeddings
 **Package:** `@bergetai/n8n-nodes-berget-ai-embeddings`
 
 - Multilingual-E5-large-instruct
 - Multilingual-E5-large
+
+### 📄 OCR Document Processing
+**Package:** `@bergetai/n8n-nodes-berget-ai-ocr`
+
+Extract text from documents:
+- PDF, DOCX, PPTX, HTML support
+- Multiple OCR engines (EasyOCR, Tesseract, etc.)
+- Table extraction
+- Async processing for large documents
 
 ### 🎤 Speech-to-Text
 **Package:** `@bergetai/n8n-nodes-berget-ai-speech`
@@ -46,6 +64,7 @@ See a complete list of models here: [berget.ai/models](https://berget.ai/models)
    - `@bergetai/n8n-nodes-berget-ai-chat`
    - `@bergetai/n8n-nodes-berget-ai-agent`
    - `@bergetai/n8n-nodes-berget-ai-embeddings`
+   - `@bergetai/n8n-nodes-berget-ai-ocr`
    - `@bergetai/n8n-nodes-berget-ai-speech`
    - `@bergetai/n8n-nodes-berget-ai-rerank`
 
@@ -55,7 +74,8 @@ See a complete list of models here: [berget.ai/models](https://berget.ai/models)
 # Install all plugins
 npm install @bergetai/n8n-nodes-berget-ai-chat
 npm install @bergetai/n8n-nodes-berget-ai-agent
-npm install @bergetai/n8n-nodes-berget-ai-embeddings  
+npm install @bergetai/n8n-nodes-berget-ai-embeddings
+npm install @bergetai/n8n-nodes-berget-ai-ocr
 npm install @bergetai/n8n-nodes-berget-ai-speech
 npm install @bergetai/n8n-nodes-berget-ai-rerank
 

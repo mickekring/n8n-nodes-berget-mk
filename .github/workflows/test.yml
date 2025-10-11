@@ -19,6 +19,8 @@ jobs:
             path: 'n8n-nodes-berget-ai-chat'
           - name: 'n8n-nodes-berget-ai-embeddings'
             path: 'n8n-nodes-berget-ai-embeddings'
+          - name: 'n8n-nodes-berget-ai-ocr'
+            path: 'n8n-nodes-berget-ai-ocr'
           - name: 'n8n-nodes-berget-ai-speech'
             path: 'n8n-nodes-berget-ai-speech'
           - name: 'n8n-nodes-berget-ai-rerank'
