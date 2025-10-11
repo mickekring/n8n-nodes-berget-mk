@@ -17,6 +17,8 @@ jobs:
     strategy:
       matrix:
         package:
+          - name: '@bergetai/n8n-nodes-berget-ai-agent'
+            path: 'n8n-nodes-berget-ai-agent'
           - name: '@bergetai/n8n-nodes-berget-ai-chat'
             path: 'n8n-nodes-berget-ai-chat'
           - name: '@bergetai/n8n-nodes-berget-ai-embeddings'
@@ -54,6 +56,12 @@ jobs:
         working-directory: ${{ matrix.package.path }}
         run: npm run build
 
+      - name: Run security audit
+        working-directory: ${{ matrix.package.path }}
+        run: |
+          npm audit --audit-level=high
+        continue-on-error: true
+
       - name: Run tests (if available)
         working-directory: ${{ matrix.package.path }}
         run: |
@@ -70,23 +78,42 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+  create-release:
+    runs-on: ubuntu-latest
+    needs: publish
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Create GitHub Release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: ${{ matrix.package.name }} ${{ github.ref }}
+          release_name: Berget AI n8n Plugins ${{ github.ref }}
           body: |
-            Release av ${{ matrix.package.name }}
+            Release av alla Berget AI n8n plugins
             
-            ## Ändringar
-            - Se CHANGELOG.md för detaljer
+            ## Paket som publicerats:
+            - @bergetai/n8n-nodes-berget-ai-agent
+            - @bergetai/n8n-nodes-berget-ai-chat
+            - @bergetai/n8n-nodes-berget-ai-embeddings
+            - @bergetai/n8n-nodes-berget-ai-speech
+            - @bergetai/n8n-nodes-berget-ai-rerank
             
             ## Installation
             ```bash
-            npm install ${{ matrix.package.name }}
+            # Installera alla paket
+            npm install @bergetai/n8n-nodes-berget-ai-agent
+            npm install @bergetai/n8n-nodes-berget-ai-chat
+            npm install @bergetai/n8n-nodes-berget-ai-embeddings
+            npm install @bergetai/n8n-nodes-berget-ai-speech
+            npm install @bergetai/n8n-nodes-berget-ai-rerank
             ```
+            
+            ## Dokumentation
+            Se README.md i respektive paket för detaljerad dokumentation.
           draft: false
           prerelease: false

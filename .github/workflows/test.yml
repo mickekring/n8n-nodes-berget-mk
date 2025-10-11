@@ -13,6 +13,8 @@ jobs:
       matrix:
         node-version: [16, 18, 20]
         package:
+          - name: 'n8n-nodes-berget-ai-agent'
+            path: 'n8n-nodes-berget-ai-agent'
           - name: 'n8n-nodes-berget-ai-chat'
             path: 'n8n-nodes-berget-ai-chat'
           - name: 'n8n-nodes-berget-ai-embeddings'
@@ -33,7 +35,13 @@ jobs:
 
       - name: Install dependencies
         working-directory: ${{ matrix.package.path }}
-        run: npm install
+        run: npm ci
+
+      - name: Run security audit
+        working-directory: ${{ matrix.package.path }}
+        run: |
+          npm audit --audit-level=moderate
+        continue-on-error: true
 
       - name: Run linting
         working-directory: ${{ matrix.package.path }}
