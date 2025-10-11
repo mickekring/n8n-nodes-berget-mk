@@ -62,19 +62,19 @@
     "version:minor": "npm version minor --workspaces",
     "version:major": "npm version major --workspaces"
   },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "typescript": "^4.9.5"
+  },
   "dependencies": {
     "@bergetai/n8n-nodes-berget-ai-agent": "^1.0.0",
     "@bergetai/n8n-nodes-berget-ai-chat": "^1.0.0",
     "@bergetai/n8n-nodes-berget-ai-embeddings": "^1.0.0",
     "@bergetai/n8n-nodes-berget-ai-ocr": "^1.0.0",
     "@bergetai/n8n-nodes-berget-ai-rerank": "^1.0.0",
-    "@bergetai/n8n-nodes-berget-ai-speech": "^1.0.0"
-  },
-  "files": [
-    "dist"
-  ],
-  "devDependencies": {
-    "typescript": "^4.9.5",
+    "@bergetai/n8n-nodes-berget-ai-speech": "^1.0.0",
     "n8n-workflow": "^1.17.0"
   },
   "peerDependencies": {
