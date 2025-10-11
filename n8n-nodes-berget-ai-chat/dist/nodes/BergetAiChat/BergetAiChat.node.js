@@ -139,6 +139,18 @@ class BergetAiChat {
                             description: 'Maximum number of tokens to generate',
                         },
                         {
+                            displayName: 'Top P',
+                            name: 'top_p',
+                            type: 'number',
+                            typeOptions: {
+                                minValue: 0,
+                                maxValue: 1,
+                                numberStepSize: 0.01,
+                            },
+                            default: 1,
+                            description: 'Nucleus sampling parameter. Alternative to temperature.',
+                        },
+                        {
                             displayName: 'Stream',
                             name: 'stream',
                             type: 'boolean',
@@ -161,6 +173,13 @@ class BergetAiChat {
                             ],
                             default: 'text',
                             description: 'Response format',
+                        },
+                        {
+                            displayName: 'User ID',
+                            name: 'user',
+                            type: 'string',
+                            default: '',
+                            description: 'Unique identifier for tracking and abuse prevention',
                         },
                     ],
                 },
