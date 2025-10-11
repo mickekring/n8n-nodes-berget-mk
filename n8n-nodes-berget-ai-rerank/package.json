@@ -27,9 +27,6 @@
     "test:local": "npm run build && npm link && echo 'Plugin linked! Start n8n with: n8n start'",
     "prepublishOnly": "npm run build"
   },
-  "files": [
-    "dist"
-  ],
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [

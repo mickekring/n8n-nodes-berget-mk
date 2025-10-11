@@ -37,7 +37,8 @@
   "scripts": {
     "install:all": "npm install && npm run install:workspaces",
     "install:workspaces": "npm install --workspaces",
-    "build": "npm run build --workspaces",
+    "build": "tsc && npm run build --workspaces",
+    "build:main": "tsc",
     "build:agent": "npm run build --workspace=n8n-nodes-berget-ai-agent",
     "build:chat": "npm run build --workspace=n8n-nodes-berget-ai-chat",
     "build:embeddings": "npm run build --workspace=n8n-nodes-berget-ai-embeddings",
@@ -69,8 +70,12 @@
     "@bergetai/n8n-nodes-berget-ai-rerank": "^1.0.0",
     "@bergetai/n8n-nodes-berget-ai-speech": "^1.0.0"
   },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "n8n-workflow": "^1.17.0"
   },
   "peerDependencies": {
     "n8n-workflow": ">=1.0.0"
@@ -82,12 +87,7 @@
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
-      "node_modules/@bergetai/n8n-nodes-berget-ai-agent/dist/credentials/BergetAiApi.credentials.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-chat/dist/credentials/BergetAiApi.credentials.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-embeddings/dist/credentials/BergetAiApi.credentials.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-ocr/dist/credentials/BergetAiApi.credentials.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-rerank/dist/credentials/BergetAiApi.credentials.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-speech/dist/credentials/BergetAiApi.credentials.js"
+      "dist/credentials/BergetAiApi.credentials.js"
     ],
     "nodes": [
       "node_modules/@bergetai/n8n-nodes-berget-ai-agent/dist/nodes/BergetAiAgent/BergetAiAgent.node.js",
