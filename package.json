@@ -78,5 +78,24 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "node_modules/@bergetai/n8n-nodes-berget-ai-agent/dist/credentials/BergetAiApi.credentials.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-chat/dist/credentials/BergetAiApi.credentials.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-embeddings/dist/credentials/BergetAiApi.credentials.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-ocr/dist/credentials/BergetAiApi.credentials.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-rerank/dist/credentials/BergetAiApi.credentials.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-speech/dist/credentials/BergetAiApi.credentials.js"
+    ],
+    "nodes": [
+      "node_modules/@bergetai/n8n-nodes-berget-ai-agent/dist/nodes/BergetAiAgent/BergetAiAgent.node.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-chat/dist/nodes/BergetAiChat/BergetAiChat.node.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-embeddings/dist/nodes/BergetAiEmbeddings/BergetAiEmbeddings.node.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-ocr/dist/nodes/BergetAiOcr/BergetAiOcr.node.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-rerank/dist/nodes/BergetAiRerank/BergetAiRerank.node.js",
+      "node_modules/@bergetai/n8n-nodes-berget-ai-speech/dist/nodes/BergetAiSpeech/BergetAiSpeech.node.js"
+    ]
   }
 }
