@@ -4,7 +4,7 @@
 
 One-click installation for all Berget AI n8n community nodes. Get access to AI chat, agents, embeddings, OCR, speech processing, and document reranking - all powered by open source models hosted in Sweden.
 
-## Quick Installation
+## 🚀 Quick Installation
 
 ### Via n8n Community Nodes (Recommended)
 
@@ -14,7 +14,7 @@ One-click installation for all Berget AI n8n community nodes. Get access to AI c
 4. Enter: `@bergetai/n8n-nodes-all`
 5. Click **Install**
 
-That's it! All Berget AI nodes are now available in your n8n instance.
+**That's it!** All Berget AI nodes are now available in your n8n instance.
 
 ### Via npm
 
@@ -36,7 +36,14 @@ npm install @bergetai/n8n-nodes-berget-ai-speech     # Speech
 npm install @bergetai/n8n-nodes-berget-ai-rerank     # Rerank
 ```
 
-## Available Plugins
+## 🔑 Getting Started
+
+1. **Install**: Use the one-click installation above
+2. **Get API Key**: Register at [berget.ai](https://berget.ai) and get your API key
+3. **Configure**: Add your Berget AI API key in n8n credentials
+4. **Build**: Start creating workflows with AI-powered nodes
+
+## 📦 Available Plugins
 
 ### 🤖 Chat/Text Models
 **Package:** `@bergetai/n8n-nodes-berget-ai-chat`
@@ -87,12 +94,6 @@ Extract text from documents:
 
 - bge-reranker-v2-m3
 
-## Getting Started
-
-1. **Install**: Use the one-click installation above
-2. **Get API Key**: Register at [berget.ai](https://berget.ai) and get your API key
-3. **Configure**: Add your Berget AI API key in n8n credentials
-4. **Build**: Start creating workflows with AI-powered nodes
 
 ## Example Workflows
 
