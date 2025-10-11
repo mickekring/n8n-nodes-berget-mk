@@ -4,6 +4,38 @@
 
 One-click installation for all Berget AI n8n community nodes. Get access to AI chat, agents, embeddings, OCR, speech processing, and document reranking - all powered by open source models hosted in Sweden.
 
+## Quick Installation
+
+### Via n8n Community Nodes (Recommended)
+
+1. Open n8n
+2. Go to **Settings** > **Community Nodes**
+3. Click **Install a community node**
+4. Enter: `@bergetai/n8n-nodes-all`
+5. Click **Install**
+
+That's it! All Berget AI nodes are now available in your n8n instance.
+
+### Via npm
+
+```bash
+# Install all nodes at once
+npm install @bergetai/n8n-nodes-all
+```
+
+### Individual Installation
+
+If you prefer to install specific nodes only:
+
+```bash
+npm install @bergetai/n8n-nodes-berget-ai-agent      # AI Agent
+npm install @bergetai/n8n-nodes-berget-ai-chat       # Chat/Text
+npm install @bergetai/n8n-nodes-berget-ai-embeddings # Embeddings
+npm install @bergetai/n8n-nodes-berget-ai-ocr        # OCR
+npm install @bergetai/n8n-nodes-berget-ai-speech     # Speech
+npm install @bergetai/n8n-nodes-berget-ai-rerank     # Rerank
+```
+
 ## Available Plugins
 
 ### 🤖 Chat/Text Models
@@ -55,48 +87,12 @@ Extract text from documents:
 
 - bge-reranker-v2-m3
 
-## Quick Installation
-
-### Via n8n Community Nodes (Recommended)
-
-1. Open n8n
-2. Go to **Settings** > **Community Nodes**
-3. Click **Install a community node**
-4. Enter: `@bergetai/n8n-nodes-all`
-5. Click **Install**
-
-That's it! All Berget AI nodes are now available in your n8n instance.
-
-### Via npm
-
-```bash
-# Install all nodes at once
-npm install @bergetai/n8n-nodes-all
-```
-
-### Individual Installation
-
-If you prefer to install specific nodes only:
-
-```bash
-npm install @bergetai/n8n-nodes-berget-ai-agent      # AI Agent
-npm install @bergetai/n8n-nodes-berget-ai-chat       # Chat/Text
-npm install @bergetai/n8n-nodes-berget-ai-embeddings # Embeddings
-npm install @bergetai/n8n-nodes-berget-ai-ocr        # OCR
-npm install @bergetai/n8n-nodes-berget-ai-speech     # Speech
-npm install @bergetai/n8n-nodes-berget-ai-rerank     # Rerank
-```
-
 ## Getting Started
 
 1. **Install**: Use the one-click installation above
 2. **Get API Key**: Register at [berget.ai](https://berget.ai) and get your API key
 3. **Configure**: Add your Berget AI API key in n8n credentials
 4. **Build**: Start creating workflows with AI-powered nodes
-
-## What's Included
-
-This package automatically installs all these nodes:
 
 ## Example Workflows
 
