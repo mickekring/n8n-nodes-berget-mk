@@ -23,7 +23,8 @@
   },
   "main": "index.js",
   "scripts": {
-    "build": "tsc && gulp build:icons",
+    "build": "tsc && npm run build:icons",
+    "build:icons": "mkdir -p dist/nodes && cp -r nodes/**/*.svg dist/nodes/ 2>/dev/null || true",
     "dev": "tsc --watch",
     "format": "prettier nodes --write",
     "lint": "eslint nodes package.json",
@@ -48,7 +49,6 @@
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.0",
-    "gulp": "^4.0.2",
     "n8n-workflow": "^1.112.0",
     "prettier": "^2.8.8",
     "typescript": "^4.9.5"
