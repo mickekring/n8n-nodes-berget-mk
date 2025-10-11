@@ -1,6 +1,8 @@
-# Berget AI n8n Plugins
+# @bergetai/n8n-nodes
 
-A collection of n8n community nodes for using Berget AI's open models in your workflows.
+**Complete collection of Berget AI n8n nodes**
+
+One-click installation for all Berget AI n8n community nodes. Get access to AI chat, agents, embeddings, OCR, speech processing, and document reranking - all powered by open source models hosted in Sweden.
 
 ## Available Plugins
 
@@ -60,35 +62,74 @@ Extract text from documents:
 1. Open n8n
 2. Go to **Settings** > **Community Nodes**
 3. Click **Install a community node**
-4. Install the plugins you need:
-   - `@bergetai/n8n-nodes-berget-ai-chat`
-   - `@bergetai/n8n-nodes-berget-ai-agent`
-   - `@bergetai/n8n-nodes-berget-ai-embeddings`
-   - `@bergetai/n8n-nodes-berget-ai-ocr`
-   - `@bergetai/n8n-nodes-berget-ai-speech`
-   - `@bergetai/n8n-nodes-berget-ai-rerank`
+4. Enter: `@bergetai/n8n-nodes`
+5. Click **Install**
+
+That's it! All Berget AI nodes are now available in your n8n instance.
 
 ### Via npm
 
 ```bash
-# Install all plugins
-npm install @bergetai/n8n-nodes-berget-ai-chat
-npm install @bergetai/n8n-nodes-berget-ai-agent
-npm install @bergetai/n8n-nodes-berget-ai-embeddings
-npm install @bergetai/n8n-nodes-berget-ai-ocr
-npm install @bergetai/n8n-nodes-berget-ai-speech
-npm install @bergetai/n8n-nodes-berget-ai-rerank
-
-# Or install individually based on needs
+# Install all nodes at once
+npm install @bergetai/n8n-nodes
 ```
 
-## API Key
+### Individual Installation
 
-You need an API key from Berget AI to use these plugins:
+If you prefer to install specific nodes only:
 
-1. Register at [Berget AI](https://berget.ai)
-2. Get your API key
-3. Configure it in n8n credentials
+```bash
+npm install @bergetai/n8n-nodes-berget-ai-agent      # AI Agent
+npm install @bergetai/n8n-nodes-berget-ai-chat       # Chat/Text
+npm install @bergetai/n8n-nodes-berget-ai-embeddings # Embeddings
+npm install @bergetai/n8n-nodes-berget-ai-ocr        # OCR
+npm install @bergetai/n8n-nodes-berget-ai-speech     # Speech
+npm install @bergetai/n8n-nodes-berget-ai-rerank     # Rerank
+```
+
+## Getting Started
+
+1. **Install**: Use the one-click installation above
+2. **Get API Key**: Register at [berget.ai](https://berget.ai) and get your API key
+3. **Configure**: Add your Berget AI API key in n8n credentials
+4. **Build**: Start creating workflows with AI-powered nodes
+
+## What's Included
+
+This package automatically installs all these nodes:
+
+## Example Workflows
+
+### AI Agent with Tools
+```
+Trigger → Berget AI Agent → HTTP Request (tool) → Response
+```
+
+### Document Analysis Pipeline
+```
+Trigger → Berget AI OCR → Berget AI Chat → Output
+```
+
+### Semantic Search System
+```
+Trigger → Berget AI Embeddings → Vector Store → Berget AI Rerank
+```
+
+### Audio Processing Workflow
+```
+Trigger → Berget AI Speech → Berget AI Chat → Response
+```
+
+## Features
+
+- ✅ **One-click installation** - Install all nodes at once
+- ✅ **EU-based AI** - Swedish hosting and GDPR compliance
+- ✅ **Open source models** - Llama, Mistral, Qwen, and more
+- ✅ **Tool calling** - Advanced AI agent capabilities
+- ✅ **Document processing** - OCR and text extraction
+- ✅ **Speech processing** - Audio transcription
+- ✅ **Semantic search** - Embeddings and reranking
+- ✅ **Dynamic models** - Always up-to-date model list
 
 ## Pricing
 
@@ -109,9 +150,9 @@ Contact us at [hello@berget.ai](mailto:hello@berget.ai) if you're interested in 
 
 ## Support
 
-- 📧 Support: [kontakt@berget.ai](mailto:hello@berget.ai)
-- 📖 API Documentation: [api.berget.ai](https://api.berget.ai)
-- 🐛 Issues: Report issues in respective plugin repository
+- 📧 Support: [kontakt@berget.ai](mailto:kontakt@berget.ai)
+- 📖 API Documentation: [api.berget.ai/docs](https://api.berget.ai/docs)
+- 🐛 Issues: Report issues in the [GitHub repository](https://github.com/bergetai/n8n-plugins)
 
 ## Development & Testing
 
