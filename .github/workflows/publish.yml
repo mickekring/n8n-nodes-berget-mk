@@ -63,18 +63,21 @@ jobs:
       - name: Run security audit
         working-directory: ${{ matrix.package.path }}
         run: |
+          echo "🔒 Running security audit..."
           npm audit --audit-level=high
-        continue-on-error: true
+          echo "✅ Security audit completed"
 
-      - name: Run tests (if available)
+      - name: Run tests (required before publish)
         working-directory: ${{ matrix.package.path }}
         run: |
           if npm run test --silent 2>/dev/null; then
+            echo "🧪 Running tests before publishing..."
             npm test
+            echo "✅ All tests passed!"
           else
-            echo "No tests found, skipping..."
+            echo "❌ No tests found - this package must have tests before publishing"
+            exit 1
           fi
-        continue-on-error: true
 
       - name: Publish to NPM
         working-directory: ${{ matrix.package.path }}

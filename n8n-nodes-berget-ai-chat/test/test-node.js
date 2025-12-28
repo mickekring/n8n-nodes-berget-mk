@@ -29,7 +29,12 @@ async function testNode() {
         console.log('✅ Node created successfully');
         console.log('📋 Node description:', node.description.displayName);
         console.log('🔧 Available operations:', node.description.properties.find(p => p.name === 'operation').options.map(o => o.name));
-        console.log('🤖 Available models:', node.description.properties.find(p => p.name === 'model').options.map(o => o.name));
+        const modelProperty = node.description.properties.find(p => p.name === 'model');
+        if (modelProperty && modelProperty.options) {
+            console.log('🤖 Available models:', modelProperty.options.map(o => o.name));
+        } else {
+            console.log('🤖 Models loaded dynamically from API');
+        }
         
         // Test with mock API key (will fail but shows structure)
         if (process.env.BERGET_API_KEY) {

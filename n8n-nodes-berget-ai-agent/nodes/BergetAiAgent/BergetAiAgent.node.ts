@@ -211,16 +211,10 @@ export class BergetAiAgent implements INodeType {
 					// Filter models that support chat completions and tool calling
 					const models = response.data.data || [];
 					const chatModels = models.filter((model: any) => {
-						// Filter for models that support chat completions
-						// Most text/chat models support tool calling
-						const modelId = model.id || '';
-						return modelId.includes('llama') || 
-							   modelId.includes('mistral') || 
-							   modelId.includes('qwen') || 
-							   modelId.includes('deepseek') || 
-							   modelId.includes('gpt') ||
-							   modelId.toLowerCase().includes('instruct') ||
-							   modelId.toLowerCase().includes('chat');
+						// Use API metadata: filter for text models with function calling capability
+						return model.model_type === 'text' && 
+							   model.capabilities && 
+							   model.capabilities.function_calling === true;
 					});
 
 					return chatModels.map((model: any) => ({

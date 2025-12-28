@@ -57,7 +57,7 @@
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
     "dev": "npm run dev --workspaces --if-present",
     "link:all": "npm run test:local --workspaces --if-present",
-    "publish:all": "npm publish --workspaces --access public",
+    "publish:all": "npm run test && npm publish --workspaces --access public",
     "version:patch": "npm version patch --workspaces",
     "version:minor": "npm version minor --workspaces",
     "version:major": "npm version major --workspaces"

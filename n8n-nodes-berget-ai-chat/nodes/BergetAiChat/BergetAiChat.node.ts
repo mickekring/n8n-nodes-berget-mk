@@ -209,20 +209,14 @@ export class BergetAiChat implements INodeType {
 					// Filter models that support chat completions
 					const models = response.data.data || [];
 					const chatModels = models.filter((model: any) => {
-						const modelId = model.id || '';
-						return modelId.includes('llama') || 
-							   modelId.includes('mistral') || 
-							   modelId.includes('qwen') || 
-							   modelId.includes('deepseek') || 
-							   modelId.includes('gpt') ||
-							   modelId.toLowerCase().includes('instruct') ||
-							   modelId.toLowerCase().includes('chat');
+						// Use API metadata: filter for text and OCR models
+						return model.model_type === 'text' || model.model_type === 'ocr';
 					});
 
 					return chatModels.map((model: any) => ({
-						name: model.id,
+						name: model.name || model.id,
 						value: model.id,
-						description: `${model.id}${model.owned_by ? ` (${model.owned_by})` : ''}`,
+						description: `${model.name || model.id}${model.owned_by ? ` (${model.owned_by})` : ''}`,
 					})).sort((a: any, b: any) => a.name.localeCompare(b.name));
 
 				} catch (error) {
