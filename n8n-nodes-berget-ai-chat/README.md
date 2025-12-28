@@ -50,11 +50,10 @@ npm link @bergetai/n8n-nodes-berget-ai-chat
 
 - Llama 3.1 8B Instruct
 - Llama 3.3 70B Instruct  
-- DeepSeek R1 Microsoft AI Finetuned
+- GLM-4.6
+- DeepSeek-OCR (vision model for image analysis)
 - Mistral Small 3.1 24B Instruct 2503
 - Qwen3 32B
-- Devstral Small 2505
-- Magistral-Small-2506
 - GPT-OSS-120B
 
 ## Features

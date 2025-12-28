@@ -1,6 +1,8 @@
 import {
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	NodeOperationError,
@@ -52,14 +54,12 @@ export class BergetAiRerank implements INodeType {
 				displayName: 'Model',
 				name: 'model',
 				type: 'options',
-				options: [
-					{
-						name: 'bge-reranker-v2-m3',
-						value: 'BAAI/bge-reranker-v2-m3',
-					},
-				],
+				typeOptions: {
+					loadOptionsMethod: 'getModels',
+				},
 				default: 'BAAI/bge-reranker-v2-m3',
 				description: 'Rerank model to use',
+				required: true,
 			},
 			{
 				displayName: 'Query',
@@ -130,6 +130,43 @@ export class BergetAiRerank implements INodeType {
 				],
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = await this.getCredentials('bergetAiApi');
+					
+					const response = await axios.get('https://api.berget.ai/v1/models', {
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+					});
+
+					if (response.status !== 200) {
+						throw new Error(`API error: ${response.statusText}`);
+					}
+
+					// Filter models that support reranking
+					const models = response.data.data || [];
+					const rerankModels = models.filter((model: any) => {
+						// Use API metadata: filter for rerank models
+						return model.model_type === 'rerank';
+					});
+
+					return rerankModels.map((model: any) => ({
+						name: model.name || model.id,
+						value: model.id,
+						description: `${model.name || model.id}${model.owned_by ? ` (${model.owned_by})` : ''}`,
+					})).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+				} catch (error) {
+					throw new Error(`Failed to load rerank models from Berget AI API. Please check your API key and network connection. Error: ${error instanceof Error ? error.message : String(error)}`);
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

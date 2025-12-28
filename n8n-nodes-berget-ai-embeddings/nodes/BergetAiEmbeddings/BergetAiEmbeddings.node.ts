@@ -1,6 +1,8 @@
 import {
 	IExecuteFunctions,
+	ILoadOptionsFunctions,
 	INodeExecutionData,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 	NodeOperationError,
@@ -52,18 +54,12 @@ export class BergetAiEmbeddings implements INodeType {
 				displayName: 'Model',
 				name: 'model',
 				type: 'options',
-				options: [
-					{
-						name: 'Multilingual-E5-large-instruct',
-						value: 'intfloat/multilingual-e5-large-instruct',
-					},
-					{
-						name: 'Multilingual-E5-large',
-						value: 'intfloat/multilingual-e5-large',
-					},
-				],
+				typeOptions: {
+					loadOptionsMethod: 'getModels',
+				},
 				default: 'intfloat/multilingual-e5-large-instruct',
 				description: 'Embedding model to use',
+				required: true,
 			},
 			{
 				displayName: 'Input Text',
@@ -103,6 +99,43 @@ export class BergetAiEmbeddings implements INodeType {
 				],
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				try {
+					const credentials = await this.getCredentials('bergetAiApi');
+					
+					const response = await axios.get('https://api.berget.ai/v1/models', {
+						headers: {
+							'Authorization': `Bearer ${credentials.apiKey}`,
+							'Content-Type': 'application/json',
+						},
+					});
+
+					if (response.status !== 200) {
+						throw new Error(`API error: ${response.statusText}`);
+					}
+
+					// Filter models that support embeddings
+					const models = response.data.data || [];
+					const embeddingModels = models.filter((model: any) => {
+						// Use API metadata: filter for embedding models
+						return model.model_type === 'embedding';
+					});
+
+					return embeddingModels.map((model: any) => ({
+						name: model.name || model.id,
+						value: model.id,
+						description: `${model.name || model.id}${model.owned_by ? ` (${model.owned_by})` : ''}`,
+					})).sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+				} catch (error) {
+					throw new Error(`Failed to load embedding models from Berget AI API. Please check your API key and network connection. Error: ${error instanceof Error ? error.message : String(error)}`);
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
