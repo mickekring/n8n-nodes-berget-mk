@@ -84,6 +84,7 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
+  
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
