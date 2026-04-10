@@ -2,6 +2,28 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.6] - 2026-04-10
+
+### Added
+
+- **`Image Analysis` resource on the Berget AI action node.** New resource for asking a vision-capable Berget model about an image. Modeled on the UX of n8n's built-in OpenAI node.
+  - **Model dropdown** is dynamically filtered to models where `capabilities.vision === true` on Berget's `/v1/models` endpoint. As of 2026-04-10 this shows `openai/gpt-oss-120b` and `mistralai/Mistral-Small-3.2-24B-Instruct-2506`. The dropdown will automatically pick up new vision models as Berget adds them — no code change needed.
+  - **Text Input** for the prompt, default `"What's in this image?"`.
+  - **Input Type** dropdown: `Binary File` (default) or `Image URL`. Binary mode reads the image from the incoming item's binary data via `context.helpers.getBinaryDataBuffer`, base64-encodes it, and sends it as a `data:<mime>;base64,...` URL to Berget. URL mode sends a plain https URL. Binary is the default because that's how most n8n workflows provide images (Form Trigger upload, HTTP Request response, Read Binary File).
+  - **Input Data Field Name** (binary only, default `data`) — same pattern as the Speech resource.
+  - **Image URL** field (URL mode only).
+  - **Detail Level** option (`auto` / `low` / `high`, default `auto`) — Berget's `image_url.detail` parameter. High gives more thorough analysis at higher token cost.
+  - **Max Tokens** and **Temperature** options.
+- Under the hood, the request is built as a single user message with content as an array of blocks: `[{type:"text", text}, {type:"image_url", image_url:{url, detail}}]`, POSTed to `/v1/chat/completions`. This matches Berget's documented `ContentItem` schema (which mirrors OpenAI's vision API format exactly).
+- Broadened the internal `BergetModel.capabilities` TypeScript type to cover all flags Berget exposes: `function_calling`, `vision`, `json_mode`, `classification`, `embeddings`, `formatted_output`, `streaming`. Previously only `function_calling` was typed, which is why `getVisionModels` didn't compile on the first try.
+
+### Design notes
+
+- **One image at a time.** Multi-image analysis (e.g. "compare these two pictures") is not supported in this release. Future work if needed.
+- **No system message in the Image Analysis resource.** Kept deliberately single-turn-single-user-message for simplicity. If you need a system prompt with an image, use the Chat resource and construct the messages array with an expression.
+- **No streaming toggle.** Same reasoning as the Chat resource: action nodes return one JSON object at the end of execution, so streaming would be cosmetic.
+- **No tools.** Use n8n's built-in AI Agent + `Berget AI Chat Model` sub-node if you need tool calling.
+
 ## [0.4.5] - 2026-04-10
 
 ### Added
