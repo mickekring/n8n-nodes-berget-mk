@@ -2,6 +2,30 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.3] - 2026-04-10
+
+### Changed
+
+- **OCR resource now always submits asynchronously and polls internally.** Previously the `Processing Mode` toggle let users pick between sync (HTTP 200 with content) and async (HTTP 202 with taskId). As of 2026-04-10 Berget AI's sync OCR endpoint consistently returns `HTTP 500 OCR_SERVICE_ERROR` for every request regardless of document, engine, or body shape — verified with direct curl calls against `/v1/ocr` using the minimal valid body from the OpenAPI spec. The async submission path continues to work and returns taskIds, and the `/v1/ocr/result/{taskId}` endpoint accepts polls. So the node now always submits `async: true` under the hood and presents the result synchronously by default: submit, poll `/v1/ocr/result/{taskId}` until ready, return the full content. From the user's perspective OCR is still a single node call, but under the hood the reliable async path is used. This is the only working path with Berget today.
+- **`Processing Mode` boolean renamed to `Return Task ID Immediately`.** Same place in the UI, clearer semantics. Default `false` — when off, the node polls internally and returns the extracted content. When on, the node returns `{ taskId, resultUrl, status }` right after submission so you can poll the result yourself with an HTTP Request node in a later workflow step. Useful for very slow documents or when you want to decouple submission from retrieval.
+
+### Added
+
+- **`Polling Timeout (Seconds)` option**, default `360` (6 minutes). Maximum wall-clock time the node will wait for an OCR task to complete before throwing a timeout error. The timeout error includes the `taskId` so you can still retrieve the result later with a manual HTTP Request to `/v1/ocr/result/{taskId}`.
+- **`Polling Interval (Seconds)` option**, default `3`, minimum `1`. How often the node polls the result endpoint. Berget suggests ~2 seconds so values of 2–5 are reasonable.
+- Defensive handling of the multiple response shapes Berget's `/v1/ocr/result/{taskId}` endpoint returns while a job is processing (observed: both `{ id, status, retryAfter }` and `{ error: { message, param: { status, retryAfter } } }`). The poll loop also detects `status === 'failed'` and throws instead of looping forever.
+- Upstream note in the `OCR Method` option description: not all 5 documented OCR engines are guaranteed to be available on Berget's infrastructure. `easyocr` is the default and most reliable; try another engine only if easyocr fails.
+
+### Removed
+
+- **Pruned three OCR options from the UI to reduce confusion**: `Perform OCR` (`doOcr`), `Extract Table Structure` (`doTableStructure`), and `Input Formats` (`inputFormat`). These were valid fields in Berget's spec but are niche or confusing for most users — why would you turn OCR off in an OCR call, or declare the format of a file you already provided by URL? The request body continues to send sensible defaults for the first two (`doOcr: true`, `doTableStructure: true` by Berget's own schema default) and omits `inputFormat` entirely so the server auto-detects. If you need to override these, open an issue.
+
+### Upstream issue note
+
+Berget AI's synchronous OCR endpoint is **broken as of 2026-04-10**. Even a minimal request body matching their OpenAPI spec exactly, against a trivial 1-page PDF, returns `HTTP 500 OCR_SERVICE_ERROR`. Verified with direct curl. The async path works but test jobs have stayed in `processing` state for 10+ minutes on trivial documents, suggesting the entire OCR service is degraded rather than just the sync entrypoint. This has been reported to the Berget team by the maintainer; the workaround in `0.4.3` will work transparently as soon as their service recovers.
+
+If OCR is critical to your workflow right now, expect long wait times or use `Return Task ID Immediately` mode and handle polling + retries yourself. Document the taskId somewhere durable so you can retrieve the result once Berget's service catches up.
+
 ## [0.4.2] - 2026-04-10
 
 ### Fixed

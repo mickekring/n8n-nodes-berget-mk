@@ -14,6 +14,9 @@ const showForOcr = {
 	},
 };
 
+const DEFAULT_POLLING_TIMEOUT_SECONDS = 360;
+const DEFAULT_POLLING_INTERVAL_SECONDS = 3;
+
 export const ocrProperties: INodeProperties[] = [
 	{
 		displayName: 'Document Type',
@@ -58,11 +61,12 @@ export const ocrProperties: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Processing Mode',
-		name: 'ocrAsync',
+		displayName: 'Return Task ID Immediately',
+		name: 'ocrReturnTaskIdImmediately',
 		type: 'boolean',
 		default: false,
-		description: 'Whether to process the document asynchronously (recommended for large documents)',
+		description:
+			'Whether to submit the document and return immediately with a taskId instead of waiting for the result. When off (default), the node submits the job and polls internally until the OCR is done, returning the extracted content. When on, the node returns { taskId, resultUrl, status } right away so you can poll the result yourself with an HTTP Request node in a separate step — useful for very slow documents or when you want to decouple submission from retrieval.',
 		...showForOcr,
 	},
 	{
@@ -106,55 +110,68 @@ export const ocrProperties: INodeProperties[] = [
 					{ name: 'TesserOCR', value: 'tesserocr' },
 				],
 				default: 'easyocr',
-				description: 'OCR engine to use',
-			},
-			{
-				displayName: 'Perform OCR',
-				name: 'doOcr',
-				type: 'boolean',
-				default: true,
-				description: 'Whether to perform OCR on the document',
-			},
-			{
-				displayName: 'Extract Table Structure',
-				name: 'doTableStructure',
-				type: 'boolean',
-				default: true,
-				description: 'Whether to extract table structure',
+				description:
+					'OCR engine to use. Not all engines are guaranteed to be available on Berget\'s infrastructure — "easyocr" is the default and most reliable. Try another engine only if easyocr fails for a specific document.',
 			},
 			{
 				displayName: 'Include Images',
 				name: 'includeImages',
 				type: 'boolean',
 				default: false,
-				description: 'Whether to include base64-encoded images in the output',
+				description: 'Whether to include base64-encoded images in the extracted output',
 			},
 			{
-				displayName: 'Input Formats',
-				name: 'inputFormat',
-				type: 'multiOptions',
-				options: [
-					{ name: 'PDF', value: 'pdf' },
-					{ name: 'HTML', value: 'html' },
-					{ name: 'DOCX', value: 'docx' },
-					{ name: 'PPTX', value: 'pptx' },
-				],
-				default: ['pdf'],
-				description: 'Input formats to accept',
+				displayName: 'Polling Timeout (Seconds)',
+				name: 'pollingTimeoutSeconds',
+				type: 'number',
+				typeOptions: { minValue: 10 },
+				default: DEFAULT_POLLING_TIMEOUT_SECONDS,
+				description:
+					"Maximum number of seconds to wait for OCR to complete when Return Task ID Immediately is off. If the job hasn't finished by then, the node throws a timeout error that still includes the taskId so you can retrieve the result later with a separate HTTP Request.",
+			},
+			{
+				displayName: 'Polling Interval (Seconds)',
+				name: 'pollingIntervalSeconds',
+				type: 'number',
+				typeOptions: { minValue: 1 },
+				default: DEFAULT_POLLING_INTERVAL_SECONDS,
+				description:
+					'How many seconds to wait between polls when checking the OCR task status. Berget suggests ~2s, so values of 2–5 are reasonable. The server may override this with a Retry-After header.',
 			},
 		],
 		...showForOcr,
 	},
 ];
 
+function sleep(ms: number): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface OcrPollStatus {
+	status?: string;
+}
+
 export async function executeOcr(
 	context: IExecuteFunctions,
 	itemIndex: number,
 ): Promise<IDataObject> {
 	const credentials = await context.getCredentials('bergetAiApi');
+	const apiKey = credentials.apiKey as string;
+
 	const documentType = context.getNodeParameter('ocrDocumentType', itemIndex) as string;
-	const asyncMode = context.getNodeParameter('ocrAsync', itemIndex) as boolean;
-	const options = context.getNodeParameter('ocrOptions', itemIndex, {}) as IDataObject;
+	const returnImmediately = context.getNodeParameter(
+		'ocrReturnTaskIdImmediately',
+		itemIndex,
+		false,
+	) as boolean;
+	const options = context.getNodeParameter('ocrOptions', itemIndex, {}) as {
+		outputFormat?: 'md' | 'json';
+		tableMode?: 'accurate' | 'fast';
+		ocrMethod?: string;
+		includeImages?: boolean;
+		pollingTimeoutSeconds?: number;
+		pollingIntervalSeconds?: number;
+	};
 
 	let documentUrl: string;
 	if (documentType === 'url') {
@@ -164,29 +181,34 @@ export async function executeOcr(
 		documentUrl = `data:application/pdf;base64,${documentData}`;
 	}
 
-	const body: IDataObject = {
+	// Always submit async. Berget's sync /ocr endpoint returns HTTP 500
+	// OCR_SERVICE_ERROR on every request as of 2026-04; the async path is
+	// the only one that actually works. We wrap polling so the user sees a
+	// synchronous result by default.
+	const requestBody: IDataObject = {
 		document: { url: documentUrl, type: 'document' },
-		async: asyncMode,
+		async: true,
 		options: {
 			outputFormat: options.outputFormat ?? 'md',
 			tableMode: options.tableMode ?? 'accurate',
 			ocrMethod: options.ocrMethod ?? 'easyocr',
-			doOcr: options.doOcr !== false,
-			doTableStructure: options.doTableStructure !== false,
 			includeImages: options.includeImages ?? false,
-			inputFormat: options.inputFormat ?? ['pdf'],
 		},
 	};
 
-	const { status, data } = await bergetRequest(
-		credentials.apiKey as string,
-		'POST',
-		'/ocr',
-		body,
-	);
+	const submission = await bergetRequest(apiKey, 'POST', '/ocr', requestBody);
+	if (submission.status !== 202 && submission.status !== 200) {
+		throw new NodeOperationError(
+			context.getNode(),
+			formatBergetError('OCR submission', submission.status, submission.data),
+			{ itemIndex },
+		);
+	}
 
-	if (status === 200) {
-		const d = data as IDataObject;
+	// If Berget ever starts honoring sync again, it'll return a full result at 200.
+	// Pass that through directly.
+	if (submission.status === 200) {
+		const d = submission.data as IDataObject;
 		return {
 			content: d.content,
 			usage: d.usage,
@@ -195,20 +217,84 @@ export async function executeOcr(
 		};
 	}
 
-	if (status === 202) {
-		const d = data as IDataObject;
+	const submissionData = submission.data as IDataObject;
+	const taskId = submissionData.taskId as string | undefined;
+	const resultUrl = submissionData.resultUrl as string | undefined;
+
+	if (!taskId) {
+		throw new NodeOperationError(
+			context.getNode(),
+			'Berget AI OCR submission accepted but returned no taskId',
+			{ itemIndex },
+		);
+	}
+
+	if (returnImmediately) {
 		return {
-			taskId: d.taskId,
-			status: d.status,
-			resultUrl: d.resultUrl,
+			taskId,
+			resultUrl,
+			status: submissionData.status ?? 'pending',
 			processing_mode: 'asynchronous',
-			message: 'Document processing started. Use the taskId to check status.',
+			message:
+				'Document processing started. Use the taskId with an HTTP Request node against resultUrl to retrieve the extracted content later.',
 		};
+	}
+
+	// Poll loop.
+	const timeoutSeconds = options.pollingTimeoutSeconds ?? DEFAULT_POLLING_TIMEOUT_SECONDS;
+	const intervalSeconds = Math.max(options.pollingIntervalSeconds ?? DEFAULT_POLLING_INTERVAL_SECONDS, 1);
+	const deadline = Date.now() + timeoutSeconds * 1000;
+
+	while (Date.now() < deadline) {
+		const poll = await bergetRequest(apiKey, 'GET', `/ocr/result/${encodeURIComponent(taskId)}`);
+
+		if (poll.status === 200) {
+			const d = poll.data as IDataObject;
+			return {
+				content: d.content,
+				usage: d.usage,
+				metadata: d.metadata,
+				taskId,
+				processing_mode: 'asynchronous',
+			};
+		}
+
+		if (poll.status === 202) {
+			// Berget has returned multiple response shapes on 202:
+			//   { id, status: 'processing', retryAfter: 2000 }
+			//   { error: { message: 'OCR job is still processing', type: 'OCR_JOB_PROCESSING', param: { status, retryAfter } } }
+			// If status is 'failed', surface that as an error instead of looping.
+			const d = poll.data as OcrPollStatus & { error?: { param?: OcrPollStatus } };
+			const observedStatus = d.status ?? d.error?.param?.status;
+			if (observedStatus === 'failed') {
+				throw new NodeOperationError(
+					context.getNode(),
+					formatBergetError('OCR', 202, poll.data) + ` — taskId: ${taskId}`,
+					{ itemIndex },
+				);
+			}
+			await sleep(intervalSeconds * 1000);
+			continue;
+		}
+
+		if (poll.status === 404) {
+			throw new NodeOperationError(
+				context.getNode(),
+				`Berget AI OCR error: task ${taskId} not found (HTTP 404). The task may have been deleted or never existed.`,
+				{ itemIndex },
+			);
+		}
+
+		throw new NodeOperationError(
+			context.getNode(),
+			formatBergetError('OCR polling', poll.status, poll.data) + ` — taskId: ${taskId}`,
+			{ itemIndex },
+		);
 	}
 
 	throw new NodeOperationError(
 		context.getNode(),
-		formatBergetError('OCR', status, data),
+		`Berget AI OCR polling timed out after ${timeoutSeconds}s. The job may still be running on Berget's side. You can retrieve the result later by doing GET /v1/ocr/result/${taskId} with your API key. To avoid this, increase the Polling Timeout option or enable 'Return Task ID Immediately'.`,
 		{ itemIndex },
 	);
 }
