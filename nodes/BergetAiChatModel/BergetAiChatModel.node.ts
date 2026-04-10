@@ -27,8 +27,7 @@ export class BergetAiChatModel implements INodeType {
 		icon: 'file:bergetai.svg',
 		group: ['transform'],
 		version: 1,
-		description:
-			"Berget AI chat model. Plug into n8n's built-in AI Agent, Basic LLM Chain, or any LangChain-based node to use Berget AI as the underlying LLM.",
+		description: 'Use a Berget AI chat model with the n8n AI Agent, Chain, or other LangChain nodes',
 		defaults: { name: 'Berget AI Chat Model' },
 		codex: {
 			categories: ['AI'],
@@ -99,12 +98,12 @@ export class BergetAiChatModel implements INodeType {
 						type: 'options',
 						default: 'medium',
 						description:
-							'Controls how much thinking a reasoning-capable model performs. Only applies to models that support chain-of-thought reasoning (GPT-OSS, DeepSeek R1, etc.). Ignored by non-reasoning models.',
+							'Controls how much thinking a reasoning-capable model performs (GPT-OSS, DeepSeek R1, etc.). The parameter is sent to the model, but note: the @langchain/openai JS package does not currently surface reasoning tokens back to the n8n Agent, so you will see the final answer only. The higher effort still affects answer quality even though the chain-of-thought is not visible.',
 						options: [
 							{
 								name: 'Low',
 								value: 'low',
-								description: 'Favor speed and use fewer reasoning tokens',
+								description: 'Favor speed, use fewer reasoning tokens',
 							},
 							{
 								name: 'Medium',
@@ -114,7 +113,7 @@ export class BergetAiChatModel implements INodeType {
 							{
 								name: 'High',
 								value: 'high',
-								description: 'Favor accuracy with more reasoning tokens',
+								description: 'Favor accuracy, use more reasoning tokens',
 							},
 						],
 					},
@@ -174,9 +173,8 @@ export class BergetAiChatModel implements INodeType {
 				return models
 					.filter((m) => m.model_type === 'text')
 					.map((m) => ({
-						name: m.name ?? m.id,
+						name: m.id,
 						value: m.id,
-						description: m.owned_by ? `${m.name ?? m.id} (${m.owned_by})` : (m.name ?? m.id),
 					}))
 					.sort((a, b) => a.name.localeCompare(b.name));
 			},
@@ -211,6 +209,7 @@ export class BergetAiChatModel implements INodeType {
 			configuration: {
 				baseURL: BERGET_API_BASE_URL,
 			},
+			streaming: true,
 			temperature: options.temperature ?? 0.7,
 			topP: options.topP ?? 1,
 			maxTokens: options.maxTokens,
