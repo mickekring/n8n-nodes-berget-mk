@@ -2,6 +2,23 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.2.1] - 2026-04-10
+
+### Fixed
+
+- **Streaming now works in the AI Agent.** Added `streaming: true` to the `ChatOpenAI` constructor in the `Berget AI Chat Model` sub-node. Without it, LangChain would run the model in non-streaming mode regardless of what the parent Agent requested, so token-by-token output never appeared in the n8n UI.
+- **Model dropdown is no longer cluttered.** The model list in the Chat Model sub-node now shows just the model ID per option, dropping the redundant secondary description. Matches how n8n's built-in OpenAI Chat Model formats its list.
+
+### Changed
+
+- **Node description shortened** for the Chat Model sub-node so the palette and details panel don't wrap awkwardly.
+- **Reasoning Effort option description** now explicitly notes that while the `reasoning_effort` parameter is sent to the model (and does influence answer quality), the `@langchain/openai` JavaScript package does not currently extract reasoning tokens from the response, so the chain-of-thought is not visible in the Agent's output. This is a known gap in the LangChain JS ecosystem tracked upstream; it may be addressed in a future release.
+
+### Known limitations
+
+- **Reasoning content is not surfaced to the Agent.** When using a reasoning-capable model like GPT-OSS-120B or DeepSeek R1 with `reasoning_effort: high`, the model reasons internally and you get a higher-quality final answer, but the chain-of-thought tokens themselves are dropped before the Agent receives them. Root cause: `@langchain/openai@1.4.x` does not parse non-standard fields like `reasoning_content`, `reasoning`, or `reasoning_details` out of the chat completions response. Fixing this properly requires either upstream support in `@langchain/openai` or writing a custom LangChain `ChatModel` class in this package — both are tracked but not in the `0.2.1` scope.
+- **"Add to workflow" extra step for community nodes.** When adding the `Berget AI Chat Model` sub-node to an AI Agent's Chat Model socket, n8n shows a confirmation panel with an "Add to workflow" button — unlike built-in models which drop directly into place. This is n8n's client-side UX for community nodes (note the package icon next to community entries in the palette) and cannot be changed from the node side. The only way to remove it is for the package to become a verified n8n community node.
+
 ## [0.2.0] - 2026-04-10
 
 ### Added
