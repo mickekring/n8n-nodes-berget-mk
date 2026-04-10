@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 **A single npm package containing six n8n community nodes for [Berget AI](https://berget.ai)** — a Swedish AI inference provider (EU-hosted, GDPR-friendly, open-source models: Llama, Mistral, Qwen, DeepSeek, GPT-OSS, KB-Whisper, etc.).
 
-Published to npm as **`n8n-nodes-berget-mk`**, maintained by Micke Kring as a fork of the upstream `@bergetai/n8n-plugins`. The fork exists because the upstream meta-package `@bergetai/n8n-nodes-all@1.1.0` was unusable (the rerank sub-package was published without its compiled `dist/`, breaking the meta-package's load path). This fork fixes that and collapses the upstream monorepo into a single maintainable package.
+Published to npm as **`n8n-nodes-berget-mk`**, maintained by Micke Kring. This is a standalone repo, not tracking any upstream — the codebase originated from the open-source Berget AI n8n nodes (MIT) and has been restructured into a single maintainable package. Treat this as "our repo"; do not propose pulling from or rebasing against any other source.
 
 ## Repository layout
 
@@ -54,7 +54,6 @@ One package, one `tsc` run, one `dist/`, one `npm publish`. No workspaces, no su
 **Internal node type names** (what n8n uses to identify nodes in workflow JSON — **do not change these without a major version bump**, they determine whether existing workflows keep working):
 
 - `bergetAiAgent`, `bergetAiChat`, `bergetAiEmbeddings`, `bergetAiOcr`, `bergetAiRerank`, `bergetAiSpeech`
-- These match upstream `@bergetai/n8n-nodes-all`, so workflows built against upstream migrate to this fork without changes.
 
 **Agent node** ([nodes/BergetAiAgent/BergetAiAgent.node.ts](nodes/BergetAiAgent/BergetAiAgent.node.ts)) is the most complex:
 
@@ -83,7 +82,7 @@ npm publish              # publish to npm (requires npm login + 2FA)
 **The build script has three steps**:
 
 1. `rm -rf dist` — start clean.
-2. `tsc` — compile TypeScript. With `moduleResolution: "node16"`, this exits cleanly even with zod 3.25.x in the tree (the old `moduleResolution: "node10"` combined with TypeScript 4.9.5 broke on zod's newer type syntax — that was one of the upstream repo's build problems).
+2. `tsc` — compile TypeScript. With `moduleResolution: "node16"`, this exits cleanly even with zod 3.25.x in the tree (the old `moduleResolution: "node10"` combined with TypeScript 4.9.5 broke on zod's newer type syntax — that was one of the original build problems that got fixed during the restructure).
 3. `node scripts/copy-assets.js` — copy each node's `bergetai.svg` into `dist/nodes/<NodeName>/`, because tsc doesn't copy non-code assets. The `icon: 'file:bergetai.svg'` in each node description resolves relative to the compiled `.js`, so the SVG must sit next to it in `dist/`.
 
 **Publishing checklist** (before running `npm publish`):
@@ -100,26 +99,21 @@ npm publish              # publish to npm (requires npm login + 2FA)
 - **TypeScript**: `target: ES2019`, `module: "node16"`, `moduleResolution: "node16"`, `strict: true`. Compiled output lives in `dist/` (gitignored).
 - **Node >= 18** required.
 - **peerDependencies**: `n8n-workflow: "*"` — wildcard, matches the official n8n-nodes-starter. The `n8n-workflow` package is installed alongside n8n itself; community nodes must not bundle their own copy.
-- **Direct `axios` use, not `this.helpers.httpRequest`**. This is historical from the upstream. It works but misses n8n's built-in retry/proxy/logging behavior. Migrating is future work, not blocking anything today.
+- **Direct `axios` use, not `this.helpers.httpRequest`**. This is how the code was originally written. It works but misses n8n's built-in retry/proxy/logging behavior. Migrating is future work, not blocking anything today.
 - **`any` is common** in API response handling. Tighten opportunistically if you're already editing a file; don't do big sweeping type refactors unprompted.
 - **Swedish context leaks**: occasional Swedish comments, default speech language `sv`. The codebase is otherwise English.
-- **One Swedish comment** in the chat node (`// Hantera response_format`) — carried over from upstream, not worth changing.
+- **One Swedish comment** in the chat node (`// Hantera response_format`) — pre-existing, not worth changing.
 
 ## Working in this repo
 
 - **Default language**: respond to the user in whatever language they use. Micke writes in Swedish and English interchangeably. Code, comments, and docs stay in English unless explicitly asked otherwise.
 - **When adding a model type or changing model filters**: 5 of the 6 nodes (everything except OCR) have their own `getModels` loadOptions method. A change to the model filter logic likely needs to touch all 5 similarly. There's no shared utility — just duplicated per-node code for now.
 - **When editing the agent node**: the "detect tool calls but throw" behavior is intentional, not a bug. Don't "fix" it without asking.
-- **When changing the credentials shape**: there's now only one copy at [credentials/BergetAiApi.credentials.ts](credentials/BergetAiApi.credentials.ts). The upstream repo had 7 duplicated copies; this fork collapsed them.
+- **When changing the credentials shape**: there's only one copy at [credentials/BergetAiApi.credentials.ts](credentials/BergetAiApi.credentials.ts).
 - **Before publishing**: always `npm run build` and `npm pack --dry-run` to verify the tarball contains all 6 `.node.js` files + 6 SVGs + the credentials.
 - **Don't edit `dist/`** — it's generated and gitignored.
-- **Don't reintroduce workspaces** — the whole point of this fork is a single package.
-
-## Relationship to upstream `@bergetai/n8n-plugins`
-
-- Upstream lives at [github.com/bergetai/n8n-plugins](https://github.com/bergetai/n8n-plugins). Micke knows the Berget AI team personally but doesn't have npm publish rights on the `@bergetai` scope.
-- When upstream ships fixes, rebasing is straightforward because the node source files (`nodes/*/*.node.ts`) live at the same relative paths in both repos. Copy upstream's updated node file over, rebuild, republish.
-- If upstream ever fixes their packaging and ships a proper `@bergetai/n8n-nodes-all@1.1.1+`, this fork may become unnecessary. Until then, this is the working install path for self-hosted n8n.
+- **Don't reintroduce workspaces** — the whole point of this layout is a single package.
+- **Don't suggest pulling from or rebasing against any external upstream.** This repo is standalone; Micke maintains it independently. If a change is needed, make it here.
 
 ## n8n 2.x compatibility status
 
@@ -129,4 +123,4 @@ Verified against n8n 2.0 breaking changes (April 2026):
 - None of these nodes import `NodeConnectionType` (renamed to `NodeConnectionTypes` in 2.x), so no code changes needed there.
 - None of these nodes use in-memory binary data (OCR takes URL/base64, speech uses form-data multipart) — so the 2.x binary-data changes don't affect them.
 - `peerDependencies: { "n8n-workflow": "*" }` means the package resolves against whatever n8n-workflow version the host n8n provides, including 2.x.
-- From **May 1, 2026**, community nodes submitted for *verification* must be published via GitHub Actions with an npm provenance attestation. This fork isn't aiming for verification — it's a personal/org-scoped fix. If that changes, add a publish workflow.
+- From **May 1, 2026**, community nodes submitted for *verification* must be published via GitHub Actions with an npm provenance attestation. This package isn't aiming for verification at the moment — it's a self-maintained install path. If that changes, add a publish workflow.
