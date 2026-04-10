@@ -151,3 +151,31 @@ The build script has three steps:
 - **Reasoning content is not surfaced.** `@langchain/openai@1.4.x` does not extract non-standard response fields like `reasoning_content` / `reasoning` / `reasoning_details`. The `reasoning_effort` parameter IS sent to the model (so answer quality improves), but the chain-of-thought tokens are dropped before reaching the Agent. Fixing this requires either upstream LangChain support or writing a custom `ChatModel` class in this package.
 - **"Add to workflow" extra step for community sub-nodes.** When adding the `Berget AI Chat Model` sub-node to an AI Agent's Chat Model socket, n8n shows a confirmation panel rather than dropping the node directly. This is n8n's client-side UX for community nodes (note the package icon in the palette) and cannot be changed from the node side. Only fixable by the package becoming a verified n8n community node.
 - **Streaming**: the Chat Model sub-node sets `streaming: true` on its `ChatOpenAI` instance. A test run on one self-hosted n8n instance failed to show streaming output, but the same instance also failed to stream with n8n's built-in OpenAI Chat Model — pointing at an n8n server-side configuration issue on that deployment rather than a bug in this package. Not confirmed on a known-good streaming n8n instance yet.
+
+## Security posture
+
+**Reviewed in 0.4.1 (April 2026)** — full manual source review of all 9 TypeScript files + dependency audit. Summary of what was found and deliberately *not* changed:
+
+**Shipped dependencies** (what actually lands in the user's `node_modules`): `axios` and `form-data` only. Both current, no known advisories. LangChain and `n8n-workflow` are peer deps, inherited from the host n8n install — not shipped by us.
+
+**`npm audit` noise**: flags lodash/expression-runtime in the devDep chain (via `n8n-workflow`'s transitive deps). This is n8n's problem, not ours — it does not affect shipped code. Ignore audit warnings about lodash unless a *direct* dependency starts showing up.
+
+**Dependabot** is configured at `.github/dependabot.yml` on a monthly cadence to catch future advisories on our direct deps. Merge those PRs without ceremony when they appear.
+
+**Deliberate non-fixes** from the review (don't "fix" these without understanding why they're as they are):
+
+1. **OCR `Document URL` field accepts arbitrary URLs** — Berget's server fetches them. This is a product feature, not a vulnerability in our code. Any SSRF risk lives on Berget's side. URL field description explicitly notes that Berget does the fetching, so users know.
+2. **`...options` spread into chat and rerank request bodies** — theoretically allows key injection if a user passes an expression-built object, but n8n's `collection` UI funnels input through declared fields and Berget's API ignores unknown keys. Explicit whitelisting would lock us out of future Berget API features.
+3. **No caching of the `/v1/models` dropdown fetch** — simple, correct, slightly wasteful on API quota. Not worth the complexity of a shared cache.
+4. **Direct `axios` use instead of `this.helpers.httpRequest`** — known trade-off, bypasses n8n's proxy/retry/logging layer. Migrating is a chunky refactor across every file. Park until someone hits the proxy issue.
+
+**What's clean and should stay clean**:
+
+- No `eval`, no `Function()`, no dynamic code execution anywhere.
+- No shell commands, no `child_process`, no file system writes.
+- No `console.log` leaking anything — zero `console.log` calls in source.
+- API key only appears in `Authorization: Bearer` headers, never in URLs, never in error messages, never in logs.
+- All API base URLs hardcoded to `https://api.berget.ai/v1`, HTTPS enforced.
+- TypeScript `strict: true` is enabled — don't disable it.
+
+**If you add new code**: don't break any of the clean items above. Specifically, never log credentials, never build URLs by concatenating user input, never use `eval` or `Function()`, and keep errors going through `NodeOperationError` so n8n handles them consistently.

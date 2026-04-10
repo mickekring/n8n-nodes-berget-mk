@@ -33,7 +33,8 @@ export const ocrProperties: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		required: true,
-		description: 'URL of the document to process',
+		description:
+			"URL of the document to process. Note: Berget AI's server fetches this URL directly, so it must be reachable from Berget's infrastructure (not just from your n8n host). Use public URLs.",
 		displayOptions: {
 			show: {
 				resource: ['ocr'],
