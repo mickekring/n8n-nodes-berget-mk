@@ -11,7 +11,6 @@ import {
 import { NodeOperationError } from 'n8n-workflow';
 
 import { chatProperties, executeChat } from './chat';
-import { embeddingsProperties, executeEmbeddings } from './embeddings';
 import { executeOcr, ocrProperties } from './ocr';
 import { executeRerank, rerankProperties } from './rerank';
 import { executeSpeech, speechProperties } from './speech';
@@ -26,14 +25,15 @@ export class BergetAi implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["resource"]}}',
 		description:
-			'Use Berget AI for chat completions, embeddings, document OCR, speech-to-text, and document reranking',
+			'Use Berget AI for chat completions, document OCR, speech-to-text, and document reranking',
 		defaults: { name: 'Berget AI' },
+		usableAsTool: true,
 		codex: {
+			alias: ['Berget', 'Berget AI', 'Swedish AI', 'LLM', 'KB-Whisper'],
 			categories: ['AI'],
 			subcategories: {
-				AI: ['Miscellaneous'],
+				AI: ['Agents', 'Miscellaneous', 'Root Nodes'],
 			},
-			alias: ['Berget', 'Berget AI', 'Swedish AI', 'LLM'],
 		},
 		credentials: [
 			{
@@ -57,11 +57,6 @@ export class BergetAi implements INodeType {
 						description: 'Create a chat completion',
 					},
 					{
-						name: 'Embeddings',
-						value: 'embeddings',
-						description: 'Generate vector embeddings from text',
-					},
-					{
 						name: 'OCR',
 						value: 'ocr',
 						description: 'Extract text from a document (PDF, DOCX, images)',
@@ -79,7 +74,6 @@ export class BergetAi implements INodeType {
 				],
 			},
 			...chatProperties,
-			...embeddingsProperties,
 			...ocrProperties,
 			...rerankProperties,
 			...speechProperties,
@@ -93,9 +87,6 @@ export class BergetAi implements INodeType {
 					this,
 					(m) => m.model_type === 'text' || m.model_type === 'ocr',
 				);
-			},
-			async getEmbeddingsModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				return loadModelOptions(this, (m) => m.model_type === 'embedding');
 			},
 			async getRerankModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return loadModelOptions(this, (m) => m.model_type === 'rerank');
@@ -118,9 +109,6 @@ export class BergetAi implements INodeType {
 				switch (resource) {
 					case 'chat':
 						result = await executeChat(this, i);
-						break;
-					case 'embeddings':
-						result = await executeEmbeddings(this, i);
 						break;
 					case 'ocr':
 						result = await executeOcr(this, i);

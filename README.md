@@ -1,13 +1,14 @@
 # n8n-nodes-berget-mk
 
-n8n community node for [Berget AI](https://berget.ai), packaged as a single installable module. Maintained by Micke Kring.
+n8n community nodes for [Berget AI](https://berget.ai), packaged as a single installable module. Maintained by Micke Kring.
 
-Two nodes, two purposes:
+Three nodes:
 
-- **Berget AI** — a multi-resource action node with five resources: **Chat**, **Embeddings**, **OCR**, **Rerank**, **Speech to Text**. Use this for one-shot calls.
-- **Berget AI Chat Model** — a sub-node that plugs into n8n's built-in **AI Agent**, **Basic LLM Chain**, and any other LangChain-based node. Use this to drive an agent with Berget AI as the underlying LLM. Exposes `reasoning_effort` and the full standard LLM parameter set.
+- **Berget AI** — multi-resource action node for one-shot calls: **Chat** (completions, classification), **OCR** (document text extraction), **Rerank** (document reranking), and **Speech to Text** (Swedish-tuned KB-Whisper). Can also be exposed as a tool to an AI Agent.
+- **Berget AI Chat Model** — sub-node that plugs into n8n's built-in **AI Agent**, **Basic LLM Chain**, and other LangChain-based nodes. Exposes `reasoning_effort` and the full standard LLM parameter set.
+- **Berget AI Embeddings Model** — sub-node that plugs into n8n's **Vector Store** nodes (Supabase, Qdrant, Pinecone, PGVector, etc.) and **Question and Answer Chain**.
 
-> ⚠️ **Experimental — actively developed.** This package is pre-1.0 and the shape of nodes may change between minor releases. Pin a specific version in production workflows until `1.0.0`. See [CHANGELOG.md](CHANGELOG.md) for breaking changes.
+> ⚠️ **Experimental — actively developed.** This package is pre-1.0 and may break between minor releases. Pin a specific version in production workflows until `1.0.0`. See [CHANGELOG.md](CHANGELOG.md) for breaking changes.
 
 ## Install
 
@@ -19,19 +20,31 @@ n8n-nodes-berget-mk
 
 Then add a **Berget AI API** credential with your API key from [berget.ai](https://berget.ai).
 
-## Using the Berget AI action node
+## Typical workflows
 
-1. Drop **Berget AI** onto the canvas.
-2. Select a **Resource** (Chat, Embeddings, OCR, Rerank, or Speech to Text).
-3. Fill in the resource-specific fields (model, input, options).
-4. Execute.
+### One-shot chat / classification
 
-## Using Berget with n8n's AI Agent
+1. Drop **Berget AI** onto the canvas, pick Resource = **Chat**, select a model, add a user message. Execute.
 
-1. Add n8n's built-in **AI Agent** node.
-2. Add a **Berget AI Chat Model** node and connect it to the Agent's **Chat Model** socket.
-3. Pick a Berget AI chat model and optionally configure `reasoning_effort` for reasoning-capable models (GPT-OSS, DeepSeek R1).
-4. Add Memory and Tool sub-nodes as usual — they work with Berget as the underlying LLM.
+### Agent with tools and memory
+
+1. Add n8n's built-in **AI Agent**.
+2. Add **Berget AI Chat Model** and connect it to the Agent's Chat Model socket.
+3. Add Memory and Tool sub-nodes as needed — they work with Berget as the underlying LLM.
+
+### RAG / vector search
+
+1. Add a Vector Store node (Supabase, Qdrant, etc.) or a Question and Answer Chain.
+2. Add **Berget AI Embeddings Model** and connect it to the Embedding socket.
+3. Index documents or query as usual.
+
+### Document extraction
+
+1. Drop **Berget AI** onto the canvas, pick Resource = **OCR**, provide a document URL or base64 data, and pick your output format (Markdown or JSON).
+
+### Swedish speech transcription
+
+1. Drop **Berget AI** onto the canvas, pick Resource = **Speech to Text**, pick a model (defaults to `KB-Whisper-Large`), and point at an audio file.
 
 ## Changelog
 

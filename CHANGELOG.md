@@ -2,6 +2,38 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.0] - 2026-04-10
+
+### Added
+
+- **`Berget AI Embeddings Model` sub-node.** New LangChain sub-node that supplies an `OpenAIEmbeddings` instance pointed at Berget AI's `/v1/embeddings` endpoint. Plugs into n8n's built-in Vector Store nodes (Supabase, Qdrant, Pinecone, PGVector, etc.), Question and Answer Chain, Vector Store Retriever, and any other parent node that accepts an `AiEmbedding` connection. Loads the model dropdown live from the Berget API, filtering for `model_type === 'embedding'`. Includes standard options: batch size, strip new lines, timeout.
+
+### Changed (breaking)
+
+- **`Embeddings` resource removed from the `Berget AI` action node.** Embeddings are now handled by the new `Berget AI Embeddings Model` sub-node that plugs into Vector Store nodes — the proper architectural home for embedding providers in n8n's AI ecosystem. If you had a `0.3.0` workflow using the action node's `Embeddings` resource, the node will now report "Unknown resource: embeddings"; replace it with the new sub-node wired into a Vector Store or QA Chain.
+- **`Berget AI` action node placement and rendering fix.** Added `usableAsTool: true` and updated `codex.subcategories` from `['Miscellaneous']` to `['Agents', 'Miscellaneous', 'Root Nodes']` — matching how the built-in OpenAI, Anthropic, Google Gemini, and Ollama vendor nodes declare themselves. This should move the node from "Other AI Nodes → Miscellaneous" up into the top-level "AI Nodes" panel alongside the other vendor cards, and switch its canvas rendering from the small-square style to the larger vendor-card style. Placement behaviour in n8n's palette is not perfectly documented and may need iteration if the result isn't quite right.
+- The `Berget AI` action node can now be used as a tool by n8n's built-in AI Agent (via `usableAsTool: true`), so you can expose any of its resources (Chat, OCR, Rerank, Speech to Text) as agent-callable tools.
+
+### Architecture notes
+
+After this release there are three published nodes:
+
+1. **`Berget AI`** — multi-resource action node with four resources: Chat, OCR, Rerank, Speech to Text. Use for one-shot calls (classification, transcription, document extraction, reranking pipelines).
+2. **`Berget AI Chat Model`** — sub-node that plugs into n8n's built-in AI Agent / Basic LLM Chain / other LangChain root nodes via `AiLanguageModel`. Use when you want the n8n Agent to drive Berget as the underlying LLM.
+3. **`Berget AI Embeddings Model`** — sub-node that plugs into Vector Store / QA Chain nodes via `AiEmbedding`. Use when building retrieval pipelines backed by Berget embeddings.
+
+A future release may add a `Berget AI Reranker` sub-node that plugs into Vector Store nodes via the `AiReranker` connection type, replacing the current action-node Rerank resource. That's deferred because LangChain JS has no off-the-shelf generic reranker class — it would require writing a small custom `BaseDocumentCompressor` subclass that calls Berget's `/v1/rerank` endpoint directly.
+
+### Migration
+
+If you had a `0.3.0` workflow using the `Embeddings` resource of the action node:
+
+1. After upgrade, the node will error with "Unknown resource: embeddings" at execution time.
+2. Delete that node (or change its Resource dropdown to one of the remaining options).
+3. For the embeddings work, add a Vector Store or QA Chain node, and wire a new `Berget AI Embeddings Model` sub-node into its Embedding socket.
+
+Workflows using `Berget AI Chat Model` or the other action-node resources (Chat, OCR, Rerank, Speech to Text) need no changes.
+
 ## [0.3.0] - 2026-04-10
 
 ### Changed (breaking)
