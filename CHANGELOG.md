@@ -2,6 +2,23 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.5] - 2026-04-10
+
+### Added
+
+- **JSON Schema support in Chat Response Format.** The Response Format dropdown now has a third option alongside Text and JSON Object: **JSON Schema**. When selected, two new fields appear: **JSON Schema Name** (short label like "classification") and **JSON Schema** (the actual schema as JSON). The request is built as `response_format: { type: 'json_schema', json_schema: { name, schema, strict: true } }` matching Berget's OpenAPI spec. The default schema is a tiny classification example (category + confidence) so users have something to start from. The schema is parsed and validated before the API call — an invalid JSON Schema produces a clear error from our node rather than a cryptic server-side rejection. This makes the Chat resource significantly more useful for classification and structured-extraction workflows.
+
+### Removed
+
+- **`User ID` option** from the Chat resource. This field was never in Berget's documented `ChatCompletionRequest` schema — it was carried over from the original code and had no proven effect on the API. Removing it cleans up the Options collection and avoids promising behavior we can't verify.
+
+### Why not streaming / tools?
+
+Considered but deliberately skipped:
+
+- **`stream` toggle**: streaming only makes visual sense on a LangChain sub-node (where partial tokens can flow into the n8n Agent UI as they arrive). On an action node, the execute function returns a single JSON object at the end of the step regardless of whether we consumed the response as a stream or not — the user experience is identical. The `Berget AI Chat Model` sub-node already has `streaming: true` baked in where it matters. A toggle on the Chat action node would be cosmetic.
+- **`tools` / `tool_choice`**: one-shot tool calling is genuinely useful but overlaps heavily with what n8n's built-in **AI Agent** (paired with our **Berget AI Chat Model** sub-node) already offers — with memory, iteration control, and proper tool execution. Adding a second agent-lite implementation inside the Chat resource would duplicate surface area for a narrow case. If you need tool calling, use the Agent path.
+
 ## [0.4.4] - 2026-04-10
 
 ### Changed

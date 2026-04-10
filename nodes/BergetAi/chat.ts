@@ -84,8 +84,38 @@ export const chatProperties: INodeProperties[] = [
 				options: [
 					{ name: 'Text', value: 'text' },
 					{ name: 'JSON Object', value: 'json_object' },
+					{ name: 'JSON Schema', value: 'json_schema' },
 				],
 				default: 'text',
+				description:
+					'Force the model to return a specific response format. "JSON Object" tells the model to return any valid JSON. "JSON Schema" enforces a specific JSON schema you provide — set the schema with the JSON Schema fields below.',
+			},
+			{
+				displayName: 'JSON Schema Name',
+				name: 'json_schema_name',
+				type: 'string',
+				default: 'response',
+				description:
+					'A short name for the schema, required by the API when Response Format is set to JSON Schema. Use something like "classification" or "extraction".',
+				displayOptions: {
+					show: {
+						'/chatOptions.response_format': ['json_schema'],
+					},
+				},
+			},
+			{
+				displayName: 'JSON Schema',
+				name: 'json_schema',
+				type: 'json',
+				default:
+					'{\n  "type": "object",\n  "properties": {\n    "category": { "type": "string" },\n    "confidence": { "type": "number" }\n  },\n  "required": ["category", "confidence"]\n}',
+				description:
+					'A JSON Schema the model must conform to. When set, the model is forced to return output matching this schema exactly (strict mode). Useful for classification, extraction, and any workflow that needs parseable structured output.',
+				displayOptions: {
+					show: {
+						'/chatOptions.response_format': ['json_schema'],
+					},
+				},
 			},
 			{
 				displayName: 'Temperature',
@@ -103,13 +133,6 @@ export const chatProperties: INodeProperties[] = [
 				default: 1,
 				description: 'Nucleus sampling cutoff',
 			},
-			{
-				displayName: 'User ID',
-				name: 'user',
-				type: 'string',
-				default: '',
-				description: 'Unique identifier for tracking and abuse prevention',
-			},
 		],
 		...showForChat,
 	},
@@ -125,18 +148,57 @@ export async function executeChat(
 		role: string;
 		content: string;
 	}>;
-	const options = context.getNodeParameter('chatOptions', itemIndex, {}) as IDataObject;
+	const options = context.getNodeParameter('chatOptions', itemIndex, {}) as IDataObject & {
+		response_format?: 'text' | 'json_object' | 'json_schema';
+		json_schema?: string | IDataObject;
+		json_schema_name?: string;
+	};
+
+	const {
+		response_format: responseFormat,
+		json_schema: jsonSchema,
+		json_schema_name: jsonSchemaName,
+		...passthroughOptions
+	} = options;
 
 	const body: IDataObject = {
 		model,
 		messages,
-		...options,
+		...passthroughOptions,
 	};
 
-	if (options.response_format === 'json_object') {
+	if (responseFormat === 'json_object') {
 		body.response_format = { type: 'json_object' };
-	} else {
-		delete body.response_format;
+	} else if (responseFormat === 'json_schema') {
+		let parsedSchema: unknown;
+		if (typeof jsonSchema === 'string') {
+			try {
+				parsedSchema = JSON.parse(jsonSchema);
+			} catch (err) {
+				throw new NodeOperationError(
+					context.getNode(),
+					`Berget AI chat: JSON Schema option is not valid JSON. ${(err as Error).message}`,
+					{ itemIndex },
+				);
+			}
+		} else {
+			parsedSchema = jsonSchema;
+		}
+		if (!parsedSchema || typeof parsedSchema !== 'object') {
+			throw new NodeOperationError(
+				context.getNode(),
+				'Berget AI chat: JSON Schema option is empty or not an object',
+				{ itemIndex },
+			);
+		}
+		body.response_format = {
+			type: 'json_schema',
+			json_schema: {
+				name: (jsonSchemaName ?? 'response').trim() || 'response',
+				schema: parsedSchema,
+				strict: true,
+			},
+		};
 	}
 
 	const { status, data } = await bergetRequest(
