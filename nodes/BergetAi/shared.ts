@@ -8,7 +8,15 @@ export interface BergetModel {
 	name?: string;
 	model_type?: string;
 	owned_by?: string;
-	capabilities?: { function_calling?: boolean };
+	capabilities?: {
+		function_calling?: boolean;
+		vision?: boolean;
+		json_mode?: boolean;
+		classification?: boolean;
+		embeddings?: boolean;
+		formatted_output?: boolean;
+		streaming?: boolean;
+	};
 }
 
 export async function fetchBergetModels(context: ILoadOptionsFunctions): Promise<BergetModel[]> {

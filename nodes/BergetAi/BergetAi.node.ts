@@ -11,6 +11,7 @@ import {
 import { NodeOperationError } from 'n8n-workflow';
 
 import { chatProperties, executeChat } from './chat';
+import { executeImage, imageProperties } from './image';
 // OCR temporarily disabled — see the block comment below the BergetAi class
 // header for the re-enable procedure.
 // import { executeOcr, ocrProperties } from './ocr';
@@ -80,6 +81,11 @@ export class BergetAi implements INodeType {
 						value: 'chat',
 						description: 'Create a chat completion',
 					},
+					{
+						name: 'Image Analysis',
+						value: 'image',
+						description: 'Ask a vision-capable model about an image',
+					},
 					// OCR: uncomment this block to re-enable the OCR resource.
 					// {
 					// 	name: 'OCR',
@@ -99,6 +105,7 @@ export class BergetAi implements INodeType {
 				],
 			},
 			...chatProperties,
+			...imageProperties,
 			// OCR: uncomment to re-enable the OCR resource properties.
 			// ...ocrProperties,
 			...rerankProperties,
@@ -112,6 +119,12 @@ export class BergetAi implements INodeType {
 				return loadModelOptions(
 					this,
 					(m) => m.model_type === 'text' || m.model_type === 'ocr',
+				);
+			},
+			async getVisionModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return loadModelOptions(
+					this,
+					(m) => m.model_type === 'text' && m.capabilities?.vision === true,
 				);
 			},
 			async getRerankModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -135,6 +148,9 @@ export class BergetAi implements INodeType {
 				switch (resource) {
 					case 'chat':
 						result = await executeChat(this, i);
+						break;
+					case 'image':
+						result = await executeImage(this, i);
 						break;
 					// OCR: uncomment to re-enable the OCR execute branch.
 					// case 'ocr':
