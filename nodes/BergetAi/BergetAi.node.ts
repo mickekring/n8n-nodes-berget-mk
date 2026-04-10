@@ -11,10 +11,34 @@ import {
 import { NodeOperationError } from 'n8n-workflow';
 
 import { chatProperties, executeChat } from './chat';
-import { executeOcr, ocrProperties } from './ocr';
+// OCR temporarily disabled — see the block comment below the BergetAi class
+// header for the re-enable procedure.
+// import { executeOcr, ocrProperties } from './ocr';
 import { executeRerank, rerankProperties } from './rerank';
 import { executeSpeech, speechProperties } from './speech';
 import { loadModelOptions } from './shared';
+
+// ---------------------------------------------------------------------------
+// OCR is temporarily hidden from the UI (since v0.4.4, 2026-04-10).
+//
+// Why: Berget AI removed OCR from their public pricing/models page, and the
+// sync /v1/ocr endpoint returns HTTP 500 OCR_SERVICE_ERROR on every request.
+// Async submissions are accepted but jobs sit in 'processing' indefinitely.
+// The endpoint looks like an orphaned API surface whose backend has been
+// retired. Rather than confuse users with a broken option, we hide it.
+//
+// The full implementation is intact at nodes/BergetAi/ocr.ts and will
+// continue to compile and ship in the tarball (as dead code). If Berget
+// brings OCR back, or someone confirms it works again, re-enabling is four
+// uncomments in this file:
+//
+//   1. The `import { executeOcr, ocrProperties } from './ocr';` line above.
+//   2. The OCR entry in the `resource` dropdown options array.
+//   3. The `...ocrProperties` spread in the properties array.
+//   4. The `case 'ocr':` branch in the execute() switch.
+//
+// All four are marked with "OCR:" comments below. No code needs to change.
+// ---------------------------------------------------------------------------
 
 export class BergetAi implements INodeType {
 	description: INodeTypeDescription = {
@@ -56,11 +80,12 @@ export class BergetAi implements INodeType {
 						value: 'chat',
 						description: 'Create a chat completion',
 					},
-					{
-						name: 'OCR',
-						value: 'ocr',
-						description: 'Extract text from a document (PDF, DOCX, images)',
-					},
+					// OCR: uncomment this block to re-enable the OCR resource.
+					// {
+					// 	name: 'OCR',
+					// 	value: 'ocr',
+					// 	description: 'Extract text from a document (PDF, DOCX, images)',
+					// },
 					{
 						name: 'Rerank',
 						value: 'rerank',
@@ -74,7 +99,8 @@ export class BergetAi implements INodeType {
 				],
 			},
 			...chatProperties,
-			...ocrProperties,
+			// OCR: uncomment to re-enable the OCR resource properties.
+			// ...ocrProperties,
 			...rerankProperties,
 			...speechProperties,
 		],
@@ -110,9 +136,10 @@ export class BergetAi implements INodeType {
 					case 'chat':
 						result = await executeChat(this, i);
 						break;
-					case 'ocr':
-						result = await executeOcr(this, i);
-						break;
+					// OCR: uncomment to re-enable the OCR execute branch.
+					// case 'ocr':
+					// 	result = await executeOcr(this, i);
+					// 	break;
 					case 'rerank':
 						result = await executeRerank(this, i);
 						break;
