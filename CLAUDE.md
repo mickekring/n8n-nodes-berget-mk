@@ -4,22 +4,23 @@ Guidance for Claude Code when working in this repository.
 
 ## What this is
 
-**A single npm package that ships two n8n community nodes for [Berget AI](https://berget.ai)** — a Swedish AI inference provider (EU-hosted, GDPR-friendly, open-source models: Llama, Mistral, Qwen, DeepSeek, GPT-OSS, KB-Whisper, etc.).
+**A single npm package that ships three n8n community nodes for [Berget AI](https://berget.ai)** — a Swedish AI inference provider (EU-hosted, GDPR-friendly, open-source models: Llama, Mistral, Qwen, DeepSeek, GPT-OSS, KB-Whisper, etc.).
 
 Published to npm as **`n8n-nodes-berget-mk`**, maintained by Micke Kring. This is a standalone repo, not tracking any upstream — the codebase originated from the open-source Berget AI n8n nodes (MIT) and has been restructured repeatedly through the `0.1.x` → `0.2.x` → `0.3.x` series. Treat this as "our repo"; do not propose pulling from or rebasing against any other source.
 
-## The two shipped nodes
+## The three shipped nodes
 
-1. **`Berget AI`** (`bergetAi`) — a **multi-resource action node** with a `Resource` dropdown that switches between five capabilities:
-    - **Chat** — one-shot chat completions
-    - **Embeddings** — generate text embeddings
+1. **`Berget AI`** (`bergetAi`) — a **multi-resource action node** with a `Resource` dropdown that switches between four capabilities:
+    - **Chat** — one-shot chat completions (most used for Micke's classification workflows)
     - **OCR** — extract text from PDF/DOCX/PPTX/HTML/images (sync + async)
     - **Rerank** — rerank documents by relevance
     - **Speech to Text** — audio transcription (defaults to Swedish, KB-Whisper)
 
-    One node, one card in the AI Nodes palette — matches how n8n's built-in vendor nodes (OpenAI, Anthropic, Ollama, Google Gemini) present themselves.
+    Has `usableAsTool: true` so it can be exposed as an agent-callable tool. Codex `subcategories: { AI: ['Agents', 'Miscellaneous', 'Root Nodes'] }` puts it in the top-level AI Nodes palette alongside OpenAI / Anthropic / Google Gemini / Ollama cards.
 
 2. **`Berget AI Chat Model`** (`bergetAiChatModel`) — a **sub-node** that supplies a LangChain `ChatOpenAI` instance to n8n's built-in **AI Agent**, **Basic LLM Chain**, and other LangChain-based parent nodes via the `AiLanguageModel` connection type. Points `ChatOpenAI` at Berget's OpenAI-compatible `/v1` endpoint. Exposes `reasoning_effort` and the standard LLM parameter set.
+
+3. **`Berget AI Embeddings Model`** (`bergetAiEmbeddingsModel`) — a **sub-node** that supplies a LangChain `OpenAIEmbeddings` instance to parent **Vector Store** nodes (Supabase, Qdrant, Pinecone, PGVector, etc.) and **Question and Answer Chain** via the `AiEmbedding` connection type. Points `OpenAIEmbeddings` at Berget's OpenAI-compatible `/v1/embeddings` endpoint. Dynamic model loading filters for `model_type === 'embedding'`.
 
 ## Repository layout
 
@@ -34,13 +35,15 @@ Published to npm as **`n8n-nodes-berget-mk`**, maintained by Micke Kring. This i
 │   │   ├── BergetAi.node.ts         # Main class: description + dispatch
 │   │   ├── shared.ts                # Shared axios helpers + model loader
 │   │   ├── chat.ts                  # Chat resource: properties + execute
-│   │   ├── embeddings.ts            # Embeddings resource
 │   │   ├── ocr.ts                   # OCR resource
 │   │   ├── rerank.ts                # Rerank resource
 │   │   ├── speech.ts                # Speech-to-text resource
 │   │   └── bergetai.svg
-│   └── BergetAiChatModel/           # The LangChain sub-node
-│       ├── BergetAiChatModel.node.ts
+│   ├── BergetAiChatModel/           # LangChain ChatOpenAI sub-node
+│   │   ├── BergetAiChatModel.node.ts
+│   │   └── bergetai.svg
+│   └── BergetAiEmbeddingsModel/     # LangChain OpenAIEmbeddings sub-node
+│       ├── BergetAiEmbeddingsModel.node.ts
 │       └── bergetai.svg
 ├── scripts/
 │   └── copy-assets.js        # Post-tsc step that copies SVGs into dist/
@@ -70,7 +73,8 @@ Each resource module (`chat.ts`, `embeddings.ts`, `ocr.ts`, `rerank.ts`, `speech
 **Internal node type names** (what n8n uses to identify nodes in workflow JSON — **do not change these without a major version bump**):
 
 - `bergetAi` — the multi-resource action node
-- `bergetAiChatModel` — the LangChain sub-node
+- `bergetAiChatModel` — the LangChain Chat Model sub-node
+- `bergetAiEmbeddingsModel` — the LangChain Embeddings Model sub-node
 - The credential type is `bergetAiApi`
 
 ## Architecture of the sub-node
