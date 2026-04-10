@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-berget-mk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "n8n community nodes for Berget AI — chat, agent, embeddings, OCR, speech, and rerank.",
   "keywords": [
     "n8n-community-node-package",
