@@ -4,7 +4,7 @@ n8n community nodes for [Berget AI](https://berget.ai), packaged as a single ins
 
 Three nodes:
 
-- **Berget AI** — multi-resource action node for one-shot calls: **Chat** (completions, classification), **OCR** (document text extraction), **Rerank** (document reranking), and **Speech to Text** (Swedish-tuned KB-Whisper). Can also be exposed as a tool to an AI Agent.
+- **Berget AI** — multi-resource action node for one-shot calls: **Chat** (completions, classification), **Rerank** (document reranking), and **Speech to Text** (Swedish-tuned KB-Whisper). Can also be exposed as a tool to an AI Agent. (OCR is temporarily hidden — see [CHANGELOG.md](CHANGELOG.md) for `0.4.4` for details.)
 - **Berget AI Chat Model** — sub-node that plugs into n8n's built-in **AI Agent**, **Basic LLM Chain**, and other LangChain-based nodes. Exposes `reasoning_effort` and the full standard LLM parameter set.
 - **Berget AI Embeddings Model** — sub-node that plugs into n8n's **Vector Store** nodes (Supabase, Qdrant, Pinecone, PGVector, etc.) and **Question and Answer Chain**.
 
@@ -37,10 +37,6 @@ Then add a **Berget AI API** credential with your API key from [berget.ai](https
 1. Add a Vector Store node (Supabase, Qdrant, etc.) or a Question and Answer Chain.
 2. Add **Berget AI Embeddings Model** and connect it to the Embedding socket.
 3. Index documents or query as usual.
-
-### Document extraction
-
-1. Drop **Berget AI** onto the canvas, pick Resource = **OCR**, provide a document URL or base64 data, and pick your output format (Markdown or JSON).
 
 ### Swedish speech transcription
 

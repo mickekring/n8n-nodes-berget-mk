@@ -2,6 +2,17 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.4] - 2026-04-10
+
+### Changed
+
+- **OCR resource hidden from the UI pending upstream clarification.** Berget AI appears to have removed OCR from their public pricing and models pages. Direct API testing in `0.4.3` confirmed that `POST /v1/ocr` sync returns `HTTP 500 OCR_SERVICE_ERROR` on every request, and async submissions are accepted but tasks sit in `processing` state indefinitely — strongly suggesting the OCR service backend has been retired even though the API surface still exists. Rather than ship a broken option, the OCR entry is removed from the Resource dropdown so users only see working resources (Chat, Rerank, Speech to Text). The maintainer has messaged the Berget team to confirm whether OCR is being sunset or is temporarily down.
+- **OCR implementation remains intact** at [nodes/BergetAi/ocr.ts](nodes/BergetAi/ocr.ts), including the async polling architecture introduced in `0.4.3`. The code still compiles, still ships in the tarball, and is ready to be re-enabled with four one-line uncomments in [nodes/BergetAi/BergetAi.node.ts](nodes/BergetAi/BergetAi.node.ts) (marked with `OCR:` comments). If Berget confirms OCR is back, re-enabling is a zero-effort patch release.
+
+### Migration
+
+If you had a `0.4.3` workflow using the `OCR` resource of the Berget AI node: after upgrading, the node will error with "Unknown resource: ocr" at execution time. Realistically, OCR wasn't working in `0.4.3` anyway — sync was 500-ing and async was hanging — so workflows using it weren't producing output.
+
 ## [0.4.3] - 2026-04-10
 
 ### Changed
