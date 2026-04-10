@@ -2,6 +2,17 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.1] - 2026-04-10
+
+### Fixed
+
+- **Speech to Text now accepts n8n binary data properly.** The previous implementation had an `Audio File` text field that passed its string value straight into a multipart form upload — which never worked for real workflows where audio arrives as binary data on the incoming item (Form Trigger upload, HTTP Request with file response, Read Binary File, etc.). Replaced the string field with an `Input Data Field Name` field matching n8n's standard binary-data pattern (same as the built-in OpenAI node's Audio → Transcribe). The execute function now uses `context.helpers.assertBinaryData()` and `context.helpers.getBinaryDataBuffer()` to pull the audio buffer off the item by binary property name, then streams it into the multipart upload with the correct filename and mime type preserved from n8n's binary metadata.
+- **Large audio uploads no longer risk truncation.** Added `maxContentLength: Infinity` and `maxBodyLength: Infinity` to the axios request for the transcription endpoint, so the default 10 MB axios body limit can't silently cap long recordings.
+
+### Migration
+
+If you had a workflow on `0.4.0` using the Speech to Text resource — you probably didn't, because it was broken for any real audio input. The new field `Input Data Field Name` defaults to `"data"`, which is what most n8n binary-producing nodes use. If you use a Form Trigger with a field named `"Audio"`, set this to `"Audio"` instead.
+
 ## [0.4.0] - 2026-04-10
 
 ### Added

@@ -28,12 +28,13 @@ export const speechProperties: INodeProperties[] = [
 		...showForSpeech,
 	},
 	{
-		displayName: 'Audio File',
-		name: 'speechFile',
+		displayName: 'Input Data Field Name',
+		name: 'speechBinaryProperty',
 		type: 'string',
-		default: '',
+		default: 'data',
 		required: true,
-		description: 'Path to the audio file or base64-encoded audio data',
+		description:
+			'Name of the binary property on the incoming item that holds the audio file. Default is "data". When using a Form Trigger, set this to the form field name (e.g. "Audio").',
 		...showForSpeech,
 	},
 	{
@@ -82,14 +83,25 @@ export async function executeSpeech(
 ): Promise<IDataObject> {
 	const credentials = await context.getCredentials('bergetAiApi');
 	const model = context.getNodeParameter('speechModel', itemIndex) as string;
-	const file = context.getNodeParameter('speechFile', itemIndex) as string;
+	const binaryPropertyName = context.getNodeParameter(
+		'speechBinaryProperty',
+		itemIndex,
+	) as string;
 	const options = context.getNodeParameter('speechOptions', itemIndex, {}) as IDataObject;
+
+	const binaryData = context.helpers.assertBinaryData(itemIndex, binaryPropertyName);
+	const fileBuffer = await context.helpers.getBinaryDataBuffer(itemIndex, binaryPropertyName);
 
 	const formData = new FormData();
 	formData.append('model', model);
-	formData.append('file', file);
+	formData.append('file', fileBuffer, {
+		filename: binaryData.fileName ?? 'audio',
+		contentType: binaryData.mimeType ?? 'application/octet-stream',
+	});
 	if (options.language) formData.append('language', options.language as string);
-	if (options.response_format) formData.append('response_format', options.response_format as string);
+	if (options.response_format) {
+		formData.append('response_format', options.response_format as string);
+	}
 	if (options.temperature !== undefined) {
 		formData.append('temperature', String(options.temperature));
 	}
@@ -103,6 +115,8 @@ export async function executeSpeech(
 				...formData.getHeaders(),
 			},
 			validateStatus: () => true,
+			maxContentLength: Infinity,
+			maxBodyLength: Infinity,
 		},
 	);
 
