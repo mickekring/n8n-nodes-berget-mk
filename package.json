@@ -1,11 +1,12 @@
 {
-  "name": "@bergetai/n8n-nodes-all",
-  "version": "1.1.0",
-  "description": "Complete collection of Berget AI n8n nodes - AI chat, agent, embeddings, OCR, speech, and rerank",
+  "name": "n8n-nodes-berget-mk",
+  "version": "0.1.0",
+  "description": "n8n community nodes for Berget AI — chat, agent, embeddings, OCR, speech, and rerank. Fork maintained by Micke Kring.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
     "berget-ai",
+    "berget",
     "ai",
     "llm",
     "agent",
@@ -17,86 +18,51 @@
     "tools"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/bergetai/n8n-plugins",
-  "author": "Berget AI <hello@berget.ai>",
+  "homepage": "https://github.com/mickekring/n8n-nodes-berget-mk",
+  "author": "Micke Kring",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bergetai/n8n-plugins.git"
+    "url": "https://github.com/mickekring/n8n-nodes-berget-mk.git"
   },
   "publishConfig": {
     "access": "public"
   },
-  "workspaces": [
-    "n8n-nodes-berget-ai-agent",
-    "n8n-nodes-berget-ai-chat",
-    "n8n-nodes-berget-ai-embeddings",
-    "n8n-nodes-berget-ai-ocr",
-    "n8n-nodes-berget-ai-rerank",
-    "n8n-nodes-berget-ai-speech"
-  ],
+  "main": "index.js",
   "scripts": {
-    "install:all": "npm install && npm run install:workspaces",
-    "install:workspaces": "npm install --workspaces",
-    "build": "tsc && npm run build --workspaces",
-    "build:main": "tsc",
-    "build:agent": "npm run build --workspace=n8n-nodes-berget-ai-agent",
-    "build:chat": "npm run build --workspace=n8n-nodes-berget-ai-chat",
-    "build:embeddings": "npm run build --workspace=n8n-nodes-berget-ai-embeddings",
-    "build:ocr": "npm run build --workspace=n8n-nodes-berget-ai-ocr",
-    "build:rerank": "npm run build --workspace=n8n-nodes-berget-ai-rerank",
-    "build:speech": "npm run build --workspace=n8n-nodes-berget-ai-speech",
-    "test": "npm run test --workspaces",
-    "test:agent": "npm run test --workspace=n8n-nodes-berget-ai-agent",
-    "test:chat": "npm run test --workspace=n8n-nodes-berget-ai-chat",
-    "test:embeddings": "npm run test --workspace=n8n-nodes-berget-ai-embeddings",
-    "test:ocr": "npm run test --workspace=n8n-nodes-berget-ai-ocr",
-    "test:rerank": "npm run test --workspace=n8n-nodes-berget-ai-rerank",
-    "test:speech": "npm run test --workspace=n8n-nodes-berget-ai-speech",
-    "lint": "npm run lint --workspaces --if-present",
-    "format": "npm run format --workspaces --if-present",
-    "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
-    "dev": "npm run dev --workspaces --if-present",
-    "link:all": "npm run test:local --workspaces --if-present",
-    "publish:all": "npm run test && npm publish --workspaces --access public",
-    "version:patch": "npm version patch --workspaces",
-    "version:minor": "npm version minor --workspaces",
-    "version:major": "npm version major --workspaces"
+    "build": "rm -rf dist && tsc && node scripts/copy-assets.js",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist node_modules"
   },
   "files": [
     "dist"
   ],
-  "devDependencies": {
-    "typescript": "^4.9.5"
-  },
   "dependencies": {
-    "@bergetai/n8n-nodes-berget-ai-agent": "^1.0.0",
-    "@bergetai/n8n-nodes-berget-ai-chat": "^1.0.0",
-    "@bergetai/n8n-nodes-berget-ai-embeddings": "^1.0.0",
-    "@bergetai/n8n-nodes-berget-ai-ocr": "^1.0.0",
-    "@bergetai/n8n-nodes-berget-ai-rerank": "^1.0.0",
-    "@bergetai/n8n-nodes-berget-ai-speech": "^1.0.0",
-    "n8n-workflow": "^1.17.0"
+    "axios": "^1.12.2",
+    "form-data": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "n8n-workflow": "^1.17.0",
+    "typescript": "^5.3.0"
   },
   "peerDependencies": {
-    "n8n-workflow": ">=1.0.0"
+    "n8n-workflow": "*"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=18.0.0"
   },
-  
   "n8n": {
     "n8nNodesApiVersion": 1,
     "credentials": [
       "dist/credentials/BergetAiApi.credentials.js"
     ],
     "nodes": [
-      "node_modules/@bergetai/n8n-nodes-berget-ai-agent/dist/nodes/BergetAiAgent/BergetAiAgent.node.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-chat/dist/nodes/BergetAiChat/BergetAiChat.node.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-embeddings/dist/nodes/BergetAiEmbeddings/BergetAiEmbeddings.node.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-ocr/dist/nodes/BergetAiOcr/BergetAiOcr.node.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-rerank/dist/nodes/BergetAiRerank/BergetAiRerank.node.js",
-      "node_modules/@bergetai/n8n-nodes-berget-ai-speech/dist/nodes/BergetAiSpeech/BergetAiSpeech.node.js"
+      "dist/nodes/BergetAiAgent/BergetAiAgent.node.js",
+      "dist/nodes/BergetAiChat/BergetAiChat.node.js",
+      "dist/nodes/BergetAiEmbeddings/BergetAiEmbeddings.node.js",
+      "dist/nodes/BergetAiOcr/BergetAiOcr.node.js",
+      "dist/nodes/BergetAiRerank/BergetAiRerank.node.js",
+      "dist/nodes/BergetAiSpeech/BergetAiSpeech.node.js"
     ]
   }
 }
