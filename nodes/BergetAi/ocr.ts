@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest } from './shared';
+import { bergetRequest, formatBergetError } from './shared';
 
 const showForOcr = {
 	displayOptions: {
@@ -206,9 +206,9 @@ export async function executeOcr(
 		};
 	}
 
-	const message =
-		(data as { error?: { message?: string } })?.error?.message ?? `HTTP ${status}`;
-	throw new NodeOperationError(context.getNode(), `Berget AI OCR error: ${message}`, {
-		itemIndex,
-	});
+	throw new NodeOperationError(
+		context.getNode(),
+		formatBergetError('OCR', status, data),
+		{ itemIndex },
+	);
 }

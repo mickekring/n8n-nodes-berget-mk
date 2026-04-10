@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest } from './shared';
+import { bergetRequest, formatBergetError } from './shared';
 
 const showForRerank = {
 	displayOptions: {
@@ -114,11 +114,11 @@ export async function executeRerank(
 	);
 
 	if (status !== 200) {
-		const message =
-			(data as { error?: { message?: string } })?.error?.message ?? `HTTP ${status}`;
-		throw new NodeOperationError(context.getNode(), `Berget AI rerank error: ${message}`, {
-			itemIndex,
-		});
+		throw new NodeOperationError(
+			context.getNode(),
+			formatBergetError('rerank', status, data),
+			{ itemIndex },
+		);
 	}
 
 	return data as IDataObject;

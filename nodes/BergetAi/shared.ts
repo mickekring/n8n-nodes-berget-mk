@@ -56,3 +56,55 @@ export async function bergetRequest(
 	});
 	return { status: response.status, data: response.data };
 }
+
+/**
+ * Format a Berget API error response into a human-readable string.
+ *
+ * Berget's API returns errors in multiple shapes across endpoints, so we
+ * handle each possibility defensively. Always includes HTTP status code,
+ * and surfaces error code + details when the API provides them.
+ */
+export function formatBergetError(resourceLabel: string, status: number, data: unknown): string {
+	const parts: string[] = [`Berget AI ${resourceLabel} error (HTTP ${status})`];
+
+	if (data && typeof data === 'object') {
+		const d = data as Record<string, unknown>;
+
+		// Shape A (OpenAPI-documented): { error: "message string", code: "...", details: ... }
+		// Shape B (OpenAI-compatible):   { error: { message: "...", type: "...", code: "..." } }
+		// Shape C (some endpoints):      { message: "..." }
+		// Shape D (bare string on some):  "error text"
+		let messageText: string | undefined;
+		let code: string | undefined;
+		let details: unknown;
+
+		const err = d.error;
+		if (typeof err === 'string') {
+			messageText = err;
+			code = typeof d.code === 'string' ? d.code : undefined;
+			details = d.details;
+		} else if (err && typeof err === 'object') {
+			const eo = err as Record<string, unknown>;
+			if (typeof eo.message === 'string') messageText = eo.message;
+			if (typeof eo.code === 'string') code = eo.code;
+			if (eo.type && typeof eo.type === 'string' && !code) code = eo.type;
+			if (eo.details !== undefined) details = eo.details;
+		} else if (typeof d.message === 'string') {
+			messageText = d.message;
+		}
+
+		if (messageText) parts.push(messageText);
+		if (code) parts.push(`code: ${code}`);
+		if (details !== undefined) {
+			const detailsStr =
+				typeof details === 'string' ? details : JSON.stringify(details);
+			if (detailsStr && detailsStr !== '{}' && detailsStr !== 'null') {
+				parts.push(`details: ${detailsStr}`);
+			}
+		}
+	} else if (typeof data === 'string' && data.trim().length > 0) {
+		parts.push(data.trim().slice(0, 500));
+	}
+
+	return parts.join(' — ');
+}
