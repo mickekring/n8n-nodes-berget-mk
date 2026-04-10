@@ -2,6 +2,34 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.3.0] - 2026-04-10
+
+### Changed (breaking)
+
+- **The five individual action nodes (`Berget AI Chat`, `Berget AI Embeddings`, `Berget AI OCR`, `Berget AI Rerank`, `Berget AI Speech`) are replaced by a single multi-resource `Berget AI` action node.** The new node has a `Resource` selector at the top (Chat / Embeddings / OCR / Rerank / Speech to Text) and exposes the same parameters per resource as the old individual nodes did, just all under one node. This matches the pattern n8n's built-in vendor nodes use (OpenAI, Anthropic, Google Gemini, Ollama) and gives the package a single card in the AI Nodes palette instead of five separate entries.
+- **Internal node type names change.** The old `bergetAiChat`, `bergetAiEmbeddings`, `bergetAiOcr`, `bergetAiRerank`, `bergetAiSpeech` node type identifiers are removed. Workflows built on `0.2.x` using any of those five nodes will show them as missing after upgrading to `0.3.0` and will need to be rebuilt using the new `Berget AI` node with the appropriate resource selected. The `Berget AI Chat Model` sub-node (used with n8n's built-in AI Agent) is **unchanged** — its internal name `bergetAiChatModel` is preserved, so any workflow using the Chat Model sub-node continues to work.
+
+### Added
+
+- **`Berget AI` multi-resource action node** with five resources:
+  - **Chat** — one-shot chat completions
+  - **Embeddings** — generate text embeddings
+  - **OCR** — extract text from PDF/DOCX/PPTX/HTML/images
+  - **Rerank** — rerank documents by relevance to a query
+  - **Speech to Text** — transcribe audio (defaults to Swedish, KB-Whisper)
+- Consolidated model loading: a single shared helper fetches `/v1/models` once per call and filters by `model_type` for the selected resource, replacing five nearly-identical copies of the same code across the old nodes.
+- Consolidated API client helper in `nodes/BergetAi/shared.ts` to reduce duplication across resource modules.
+
+### Migration
+
+If you had a workflow on `0.2.x`:
+
+1. After upgrading to `0.3.0`, any `Berget AI Chat`, `Berget AI Embeddings`, `Berget AI OCR`, `Berget AI Rerank`, or `Berget AI Speech` nodes in the workflow will appear as missing.
+2. Delete each missing node and add the new `Berget AI` node in its place.
+3. Select the matching `Resource` value (e.g. "Chat" to replace the old `Berget AI Chat` node).
+4. Re-enter the model, messages / input / query / etc. as you had them before.
+5. Workflows using the `Berget AI Chat Model` sub-node (plugged into n8n's built-in AI Agent) need no changes.
+
 ## [0.2.1] - 2026-04-10
 
 ### Fixed
