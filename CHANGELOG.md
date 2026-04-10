@@ -2,6 +2,16 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.2] - 2026-04-10
+
+### Fixed
+
+- **API error messages now include the HTTP status code, error code, and structured details instead of a bare opaque string.** The previous error formatter assumed a single shape (`data.error.message`) which didn't match the `ApiError` schema documented in Berget's OpenAPI spec (`{ error: "string", code: "string", details: ... }`). When Berget returned an error, the formatter silently fell through to a generic fallback, making it impossible to diagnose issues like OCR failures. The new `formatBergetError()` helper in `nodes/BergetAi/shared.ts` handles multiple response shapes defensively (OpenAPI-documented, OpenAI-compatible, plain message, bare string) and always includes the HTTP status code. Applied to chat, OCR, rerank, and speech resources.
+
+### Why
+
+A user reported OCR failing with the opaque error `"Berget AI OCR error: Failed to process document"` across multiple document URLs. Without the HTTP status code or any structured error details, there was no way to tell whether the failure was a 400 (bad request), 408 (timeout), 500 (server error), or something else. The new error format will make the root cause visible on the next retry.
+
 ## [0.4.1] - 2026-04-10
 
 ### Fixed

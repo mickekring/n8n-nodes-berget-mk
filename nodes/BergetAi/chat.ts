@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest } from './shared';
+import { bergetRequest, formatBergetError } from './shared';
 
 const showForChat = {
 	displayOptions: {
@@ -147,11 +147,11 @@ export async function executeChat(
 	);
 
 	if (status !== 200) {
-		const message =
-			(data as { error?: { message?: string } })?.error?.message ?? `HTTP ${status}`;
-		throw new NodeOperationError(context.getNode(), `Berget AI chat error: ${message}`, {
-			itemIndex,
-		});
+		throw new NodeOperationError(
+			context.getNode(),
+			formatBergetError('chat', status, data),
+			{ itemIndex },
+		);
 	}
 
 	return data as IDataObject;
