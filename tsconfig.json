@@ -1,28 +1,31 @@
 {
   "compilerOptions": {
     "target": "ES2019",
-    "module": "commonjs",
+    "module": "node16",
     "lib": ["ES2019"],
     "declaration": true,
     "outDir": "./dist",
     "rootDir": "./",
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "credentials/**/*"
+    "credentials/**/*",
+    "nodes/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "n8n-nodes-*"
+    "n8n-nodes-berget-ai-*",
+    "scripts"
   ]
 }
