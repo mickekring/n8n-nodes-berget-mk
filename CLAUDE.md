@@ -160,6 +160,15 @@ The build script has three steps:
 
 **`npm audit` noise**: flags lodash/expression-runtime in the devDep chain (via `n8n-workflow`'s transitive deps). This is n8n's problem, not ours — it does not affect shipped code. Ignore audit warnings about lodash unless a *direct* dependency starts showing up.
 
+**Socket.dev scan noise** (checked against the npm page's Dependency Alerts tab in April 2026): Socket flags the same devDep-only lodash CVEs as `npm audit`, plus a handful of pattern-based alerts that look scary but aren't actionable for a package like this. For reference so future-you doesn't re-panic on a Socket email:
+
+- **"Uses eval" (N instances in N packages)** — pattern scan across the whole transitive tree. Our own code has zero `eval`/`Function()`, verified manually. The flag is triggered by legitimate libraries deeper in the tree (n8n-workflow's expression evaluator, template engines, JSON Schema validators like ajv). Not a vulnerability.
+- **"Network access" (N packages)** — our entire purpose is making HTTPS calls to Berget's API via axios. Of course packages in the tree access the network. Socket flags it on every HTTP client package it sees. Not a vulnerability, it's the point.
+- **"AI-detected possible typosquat"** — Socket's classifier is aggressive and generates false positives on common packages with similar names (e.g. `is-typed-array` vs `is-typedarray`, both legitimate, both unrelated to each other). Verify by checking the actual package name and its download count/maintainer before believing it.
+- **CVE entries** — if they're indirect and dev-only (lodash etc.), ignore until n8n fixes their tree. If they're on a direct runtime dep (`axios`, `form-data`), Dependabot will open a PR — merge it and ship a patch release.
+
+Only act on Socket alerts that either (a) name a **direct** runtime dependency of ours, or (b) flag **our own source files**. Everything else is noise for this kind of package.
+
 **Dependabot** is configured at `.github/dependabot.yml` on a monthly cadence to catch future advisories on our direct deps. Merge those PRs without ceremony when they appear.
 
 **Deliberate non-fixes** from the review (don't "fix" these without understanding why they're as they are):
