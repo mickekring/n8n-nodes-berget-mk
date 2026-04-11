@@ -70,8 +70,8 @@ export const rerankProperties: INodeProperties[] = [
 		default: {},
 		options: [
 			{
-				displayName: 'Top K',
-				name: 'top_k',
+				displayName: 'Top N',
+				name: 'top_n',
 				type: 'number',
 				typeOptions: { minValue: 1 },
 				default: 10,

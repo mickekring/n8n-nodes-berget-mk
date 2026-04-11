@@ -1,0 +1,200 @@
+import type { Callbacks } from '@langchain/core/callbacks/manager';
+import { Document, type DocumentInterface } from '@langchain/core/documents';
+import { BaseDocumentCompressor } from '@langchain/core/retrievers/document_compressors';
+import axios from 'axios';
+import {
+	NodeConnectionTypes,
+	type ILoadOptionsFunctions,
+	type INodePropertyOptions,
+	type INodeType,
+	type INodeTypeDescription,
+	type ISupplyDataFunctions,
+	type SupplyData,
+} from 'n8n-workflow';
+
+const BERGET_API_BASE_URL = 'https://api.berget.ai/v1';
+
+interface BergetModel {
+	id: string;
+	model_type?: string;
+}
+
+interface BergetRerankResult {
+	index: number;
+	relevance_score: number;
+	document?: string;
+}
+
+interface BergetRerankResponse {
+	data: BergetRerankResult[];
+}
+
+/**
+ * LangChain-compatible document compressor that calls Berget AI's `/v1/rerank`
+ * endpoint to reorder a list of documents by relevance to a query. Plugs into
+ * any n8n node that accepts an AiReranker connection type (Vector Store
+ * retrievers, QA Chain, etc.).
+ *
+ * Berget's API returns results with 0-based indices into the input documents
+ * array. We preserve the original LangChain Document metadata across the round
+ * trip so downstream consumers don't lose pageContent source references.
+ */
+class BergetReranker extends BaseDocumentCompressor {
+	private readonly apiKey: string;
+	private readonly model: string;
+	private readonly topN: number;
+	private readonly timeoutMs: number;
+
+	constructor(params: { apiKey: string; model: string; topN: number; timeoutMs: number }) {
+		super();
+		this.apiKey = params.apiKey;
+		this.model = params.model;
+		this.topN = params.topN;
+		this.timeoutMs = params.timeoutMs;
+	}
+
+	async compressDocuments(
+		documents: DocumentInterface[],
+		query: string,
+		_callbacks?: Callbacks,
+	): Promise<DocumentInterface[]> {
+		if (documents.length === 0) return [];
+
+		const documentStrings = documents.map((d) => d.pageContent);
+
+		const response = await axios.post<BergetRerankResponse>(
+			`${BERGET_API_BASE_URL}/rerank`,
+			{
+				model: this.model,
+				query,
+				documents: documentStrings,
+				top_n: Math.min(this.topN, documents.length),
+				return_documents: false,
+			},
+			{
+				headers: {
+					Authorization: `Bearer ${this.apiKey}`,
+					'Content-Type': 'application/json',
+				},
+				timeout: this.timeoutMs,
+			},
+		);
+
+		const results = response.data?.data ?? [];
+
+		return results.map((result) => {
+			const original = documents[result.index];
+			return new Document({
+				pageContent: original?.pageContent ?? result.document ?? '',
+				metadata: {
+					...(original?.metadata ?? {}),
+					relevance_score: result.relevance_score,
+				},
+			});
+		});
+	}
+}
+
+export class BergetAiReranker implements INodeType {
+	description: INodeTypeDescription = {
+		displayName: 'Berget AI Reranker',
+		name: 'bergetAiReranker',
+		icon: 'file:bergetai.svg',
+		group: ['transform'],
+		version: 1,
+		description:
+			'Rerank documents retrieved from a Vector Store using a Berget AI reranker model. Plugs into Vector Store retrievers and other nodes that accept an AiReranker connection.',
+		defaults: { name: 'Berget AI Reranker' },
+		codex: {
+			categories: ['AI'],
+			subcategories: {
+				AI: ['Rerankers'],
+			},
+		},
+		credentials: [{ name: 'bergetAiApi', required: true }],
+		inputs: [],
+		outputs: [NodeConnectionTypes.AiReranker],
+		outputNames: ['Reranker'],
+		properties: [
+			{
+				displayName:
+					'This node must be connected to a Vector Store retriever or a similar parent node that accepts a reranker. It cannot be executed on its own.',
+				name: 'notice',
+				type: 'notice',
+				default: '',
+			},
+			{
+				displayName: 'Model',
+				name: 'model',
+				type: 'options',
+				typeOptions: { loadOptionsMethod: 'getRerankModels' },
+				default: '',
+				required: true,
+				description: 'The Berget AI reranker model to use. Fetched live from the Berget API.',
+			},
+			{
+				displayName: 'Top N',
+				name: 'topN',
+				type: 'number',
+				typeOptions: { minValue: 1 },
+				default: 3,
+				description:
+					'Maximum number of documents to keep after reranking. The parent node still passes the reranker a larger candidate set; this controls how many survive the rerank step.',
+			},
+			{
+				displayName: 'Options',
+				name: 'options',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				options: [
+					{
+						displayName: 'Timeout (Ms)',
+						name: 'timeout',
+						type: 'number',
+						typeOptions: { minValue: 1 },
+						default: 60000,
+						description: 'Maximum time in milliseconds to wait for the rerank API',
+					},
+				],
+			},
+		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getRerankModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const credentials = await this.getCredentials('bergetAiApi');
+				const response = await axios.get(`${BERGET_API_BASE_URL}/models`, {
+					headers: {
+						Authorization: `Bearer ${credentials.apiKey as string}`,
+						'Content-Type': 'application/json',
+					},
+				});
+				const models: BergetModel[] = response.data?.data ?? [];
+				return models
+					.filter((m) => m.model_type === 'rerank')
+					.map((m) => ({ name: m.id, value: m.id }))
+					.sort((a, b) => a.name.localeCompare(b.name));
+			},
+		},
+	};
+
+	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+		const credentials = await this.getCredentials('bergetAiApi');
+		const model = this.getNodeParameter('model', itemIndex) as string;
+		const topN = this.getNodeParameter('topN', itemIndex, 3) as number;
+		const options = this.getNodeParameter('options', itemIndex, {}) as {
+			timeout?: number;
+		};
+
+		const reranker = new BergetReranker({
+			apiKey: credentials.apiKey as string,
+			model,
+			topN,
+			timeoutMs: options.timeout ?? 60000,
+		});
+
+		return { response: reranker };
+	}
+}
