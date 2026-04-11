@@ -2,6 +2,12 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.7] - 2026-04-11
+
+### Added
+
+- **`Dimensions` option on the Berget AI Embeddings Model sub-node.** Matches the same option on n8n's built-in OpenAI Embeddings sub-node. Lets you control the embedding vector size when you need to match a Vector Store's configured dimension or store smaller vectors at some cost to retrieval quality. Berget's default embedding model `intfloat/multilingual-e5-large-instruct` produces 1024-dimensional vectors natively, so that's the default in the UI. Leave unchanged for full-size embeddings. The value is passed through to LangChain's `OpenAIEmbeddings({ dimensions })` and then to Berget's `/v1/embeddings` endpoint, which explicitly supports the `dimensions` parameter per their OpenAPI spec.
+
 ## [0.4.6] - 2026-04-10
 
 ### Added

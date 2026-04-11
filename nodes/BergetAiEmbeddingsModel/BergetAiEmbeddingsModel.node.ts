@@ -72,6 +72,15 @@ export class BergetAiEmbeddingsModel implements INodeType {
 						description: 'Number of documents to embed per API request',
 					},
 					{
+						displayName: 'Dimensions',
+						name: 'dimensions',
+						type: 'number',
+						typeOptions: { minValue: 1 },
+						default: 1024,
+						description:
+							"The number of dimensions the resulting embedding vectors should have. When omitted or left at the model's native size, the full embedding is returned. Berget's default embedding model intfloat/multilingual-e5-large-instruct produces 1024-dimensional vectors natively. Lower values produce smaller vectors at some cost to retrieval quality — useful when storing many embeddings or when your vector store has a fixed dimension. Must match the dimension your Vector Store is configured for, or indexing will fail.",
+					},
+					{
 						displayName: 'Strip New Lines',
 						name: 'stripNewLines',
 						type: 'boolean',
@@ -120,6 +129,7 @@ export class BergetAiEmbeddingsModel implements INodeType {
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
 		const options = this.getNodeParameter('options', itemIndex, {}) as {
 			batchSize?: number;
+			dimensions?: number;
 			stripNewLines?: boolean;
 			timeout?: number;
 		};
@@ -133,6 +143,7 @@ export class BergetAiEmbeddingsModel implements INodeType {
 			batchSize: options.batchSize ?? 512,
 			stripNewLines: options.stripNewLines ?? true,
 			timeout: options.timeout ?? 60000,
+			...(options.dimensions ? { dimensions: options.dimensions } : {}),
 		});
 
 		return { response: embeddings };
