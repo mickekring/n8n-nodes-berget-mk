@@ -2,6 +2,20 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.9] - 2026-04-11
+
+### Added
+
+- **`Berget AI Reranker` sub-node.** New LangChain sub-node that plugs into n8n's Vector Store retrievers and other parent nodes accepting the `AiReranker` connection type. Implemented as a `BaseDocumentCompressor` subclass (from `@langchain/core/retrievers/document_compressors`) that calls Berget's `/v1/rerank` endpoint and reorders the candidate documents by relevance score, preserving the original LangChain Document metadata across the round trip. This unblocks the RAG flow where a Vector Store is exposed as an Agent tool and n8n requires an `EmbeddingReranker` socket to be filled alongside the Embeddings sub-node. Default model loads from `/v1/models` filtered to `model_type === 'rerank'` (currently `BAAI/bge-reranker-v2-m3`). Default `Top N: 3`, configurable. Timeout option available.
+
+### Fixed
+
+- **Rerank action resource parameter name**: the `Top K` option was actually sending `top_k` in the request body, but Berget's `/v1/rerank` endpoint expects `top_n` per their OpenAPI spec. Renamed the option to `Top N` and changed the request key to `top_n`. Previously the API was silently ignoring `top_k` and using its default (3) regardless of what the user set, so if rerank results always looked "limited to 3" that's why. This only affected the action-node Rerank resource, not the new sub-node (which got the parameter name right from the start).
+
+### Architecture note
+
+The sub-node does NOT use `logWrapper` from `@n8n/ai-utilities` (which is private to n8n and unavailable to community nodes). This means — like our other LangChain sub-nodes — the reranker won't show its own call count or per-invocation debug panel in the n8n canvas. The rerank is still happening and still working correctly. Only the cosmetic canvas instrumentation is missing.
+
 ## [0.4.8] - 2026-04-11
 
 ### Fixed
