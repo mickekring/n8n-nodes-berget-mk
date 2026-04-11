@@ -75,10 +75,10 @@ export class BergetAiEmbeddingsModel implements INodeType {
 						displayName: 'Dimensions',
 						name: 'dimensions',
 						type: 'number',
-						typeOptions: { minValue: 1 },
-						default: 1024,
+						typeOptions: { minValue: 0 },
+						default: 0,
 						description:
-							"The number of dimensions the resulting embedding vectors should have. When omitted or left at the model's native size, the full embedding is returned. Berget's default embedding model intfloat/multilingual-e5-large-instruct produces 1024-dimensional vectors natively. Lower values produce smaller vectors at some cost to retrieval quality — useful when storing many embeddings or when your vector store has a fixed dimension. Must match the dimension your Vector Store is configured for, or indexing will fail.",
+							"⚠️ CURRENTLY BROKEN ON BERGET'S API. Leave at 0 (default) to omit the parameter entirely — this is the only reliable mode as of 2026-04. Setting any positive value causes Berget to return HTTP 503 EMBEDDING_CREATION_ERROR for every request, even when the value matches the model's native dimension (e.g. 1024 for intfloat/multilingual-e5-large-instruct). Berget's OpenAPI spec documents the dimensions parameter but the backend currently rejects it for all embedding models we've tested. The field is kept here so that when Berget fixes their backend, you can set a dimension without a package update. Default behaviour (dimensions=0) returns the model's native vector size.",
 					},
 					{
 						displayName: 'Strip New Lines',
@@ -134,6 +134,12 @@ export class BergetAiEmbeddingsModel implements INodeType {
 			timeout?: number;
 		};
 
+		// Dimensions is intentionally only passed through when > 0. Berget's
+		// backend currently returns HTTP 503 EMBEDDING_CREATION_ERROR for any
+		// request that includes the dimensions field (verified 2026-04-11),
+		// despite their OpenAPI spec documenting it. The field is kept in the
+		// UI so users can opt in once Berget fixes the backend without a
+		// package update. See CHANGELOG 0.4.8 for details.
 		const embeddings = new OpenAIEmbeddings({
 			apiKey: credentials.apiKey as string,
 			model: modelName,
@@ -143,7 +149,9 @@ export class BergetAiEmbeddingsModel implements INodeType {
 			batchSize: options.batchSize ?? 512,
 			stripNewLines: options.stripNewLines ?? true,
 			timeout: options.timeout ?? 60000,
-			...(options.dimensions ? { dimensions: options.dimensions } : {}),
+			...(options.dimensions && options.dimensions > 0
+				? { dimensions: options.dimensions }
+				: {}),
 		});
 
 		return { response: embeddings };

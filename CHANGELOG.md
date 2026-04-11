@@ -2,6 +2,26 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.8] - 2026-04-11
+
+### Fixed
+
+- **`Dimensions` option on Berget AI Embeddings Model now defaults to `0` (don't send) and is only forwarded to the API when explicitly set to a positive value.** Previously the option defaulted to `1024` and was always sent to Berget's `/v1/embeddings` endpoint. This caused every indexing run to fail with `HTTP 503 EMBEDDING_CREATION_ERROR` on Berget's side. The field description now clearly warns that setting it is currently broken against Berget's backend and the parameter should be left at `0` until Berget fixes their implementation.
+
+### Upstream issue note
+
+Berget AI's `/v1/embeddings` endpoint documents a `dimensions` parameter in its OpenAPI spec — part of the standard OpenAI-compatible embeddings API — but the backend implementation rejects any request that includes it. Verified with direct curl against their API on `intfloat/multilingual-e5-large-instruct`:
+
+- Request without `dimensions` → `HTTP 200`, returns a 1024-dim vector as expected.
+- Request with `dimensions: 1024` (matching the model's native size) → `HTTP 503` `EMBEDDING_CREATION_ERROR`.
+- Request with `dimensions: 512` → `HTTP 503` `EMBEDDING_CREATION_ERROR`.
+
+So the backend isn't validating `dimensions` against the model's native size or anything useful — it's simply failing as soon as the field is present in the request body. This has been reported to the Berget team. The field is kept in the UI (not removed) so that when they fix the backend, users can opt into reduced-dimension vectors without needing a package update.
+
+### Diagnostic note
+
+When `0.4.7`'s `Dimensions: 1024` first failed in a real Qdrant indexing workflow, the visible error was `HTTP 429 Rate limit exceeded`. That was misleading: because each failing 503 still counts against Berget's 75-requests-per-minute rate window, a burst of 503s will rapidly look like a rate limit problem once the rate window saturates. The root cause was always the 503 from the dimensions field. If you see 429s cluster suddenly, check whether a recent config change added a parameter the backend doesn't actually handle.
+
 ## [0.4.7] - 2026-04-11
 
 ### Added
