@@ -2,6 +2,24 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.10] - 2026-04-11
+
+### Fixed
+
+- **Reranker sub-node returned zero documents.** The reranker shipped in `0.4.9` read `response.data.data` — which is what Berget's OpenAPI spec declares — but the actual runtime response wraps the results in `response.data.results` instead. So every rerank call parsed an empty array and the Vector Store retriever got zero hits back, causing agents to answer "no articles found" whenever the reranker was wired in. Verified the runtime shape with direct curl against `/v1/rerank`.
+  - Reader now checks `results` first, then falls back to `data`, so the code works against Berget's current runtime and any future version that matches the spec.
+  - `document` field in each result is also not a bare string as the spec claims — it's `{ text, multi_modal }`. Not load-bearing for our code (we re-use the original LangChain Document by index) but typed permissively now.
+
+### Upstream issue note
+
+This is the **third** spec-vs-runtime discrepancy we've hit in Berget's API, joining the `/v1/ocr` sync endpoint returning 500s and the `/v1/embeddings` `dimensions` parameter returning 503s. Pattern: Berget's OpenAPI spec at `https://api.berget.ai/openapi.json` is significantly out of date compared to what the actual API returns. The three discrepancies so far:
+
+1. **`/v1/ocr` sync**: spec says it returns HTTP 200 with an `OCRResponse`. Runtime returns HTTP 500 `OCR_SERVICE_ERROR`. Async path works.
+2. **`/v1/embeddings` `dimensions` parameter**: spec documents it as a valid optional field. Runtime returns HTTP 503 `EMBEDDING_CREATION_ERROR` for any request that includes it, at any value.
+3. **`/v1/rerank` response shape**: spec declares `{ object, data, model, usage }`. Runtime returns `{ id, results, model, usage }` — different top-level key, different per-result document shape.
+
+When adding new Berget endpoints in the future, **verify the runtime response shape with a direct curl call before trusting the spec**. The spec is a rough sketch, not ground truth.
+
 ## [0.4.9] - 2026-04-11
 
 ### Added
