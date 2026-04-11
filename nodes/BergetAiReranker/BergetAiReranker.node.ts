@@ -22,11 +22,22 @@ interface BergetModel {
 interface BergetRerankResult {
 	index: number;
 	relevance_score: number;
-	document?: string;
+	// Berget's runtime wraps the document in an object with { text, multi_modal },
+	// even though their OpenAPI spec declares it as a bare string. We don't rely
+	// on this field (we re-use the original Document from the input array via
+	// the index) but type it permissively so both shapes compile.
+	document?: string | { text?: string; multi_modal?: unknown };
 }
 
+/**
+ * Berget's rerank response shape differs from their OpenAPI spec. Runtime
+ * returns `{ results: [...] }` but the spec declares `{ data: [...] }`. We
+ * accept either so this code works against the current runtime and any
+ * future version that matches the spec.
+ */
 interface BergetRerankResponse {
-	data: BergetRerankResult[];
+	data?: BergetRerankResult[];
+	results?: BergetRerankResult[];
 }
 
 /**
@@ -80,12 +91,17 @@ class BergetReranker extends BaseDocumentCompressor {
 			},
 		);
 
-		const results = response.data?.data ?? [];
+		const payload = response.data ?? {};
+		const results: BergetRerankResult[] = payload.results ?? payload.data ?? [];
 
 		return results.map((result) => {
 			const original = documents[result.index];
+			const fallbackText =
+				typeof result.document === 'string'
+					? result.document
+					: result.document?.text ?? '';
 			return new Document({
-				pageContent: original?.pageContent ?? result.document ?? '',
+				pageContent: original?.pageContent ?? fallbackText,
 				metadata: {
 					...(original?.metadata ?? {}),
 					relevance_score: result.relevance_score,
