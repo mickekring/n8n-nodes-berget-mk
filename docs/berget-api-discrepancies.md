@@ -263,7 +263,7 @@ For any new endpoint added after this report, a simple "publish the spec, then r
 
 Not reporting these as anything critical — the package has workarounds for all three and everything the node claims to do is verified working. Just a concrete list with repros in case it's useful to the team.
 
-Happy to answer questions or help test fixes. Reach me via the repo at [github.com/mickekring/n8n-nodes-berget-mk](https://github.com/mickekring/n8n-nodes-berget-mk).
+Happy to answer questions or help test fixes.
 
 ---
 
@@ -272,4 +272,3 @@ Happy to answer questions or help test fixes. Reach me via the repo at [github.c
 - `0.4.4` — OCR sync issue noted, OCR resource hidden
 - `0.4.8` — Embeddings dimensions issue noted, default changed to off
 - `0.4.10` — Rerank response shape issue noted, reader made tolerant
-- Full changelog: [CHANGELOG.md](../CHANGELOG.md)
