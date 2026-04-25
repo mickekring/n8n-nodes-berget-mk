@@ -2,6 +2,33 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.5.0] - 2026-04-25
+
+Milestone release marking the completion of the post-0.4.x code audit and the closing of two parity gaps that had been outstanding for several minor versions. Functionally identical to `0.4.18` — the jump from `0.4.x` to `0.5.x` is symbolic, signalling that the audit work is done and the package is ready for broader use beyond the maintainer's own workflows.
+
+### What's in 0.5.0 (cumulative since 0.4.14)
+
+Detail in the per-version entries below. Brief recap:
+
+- **`0.4.15`** — Parsed `output` field on Chat responses when JSON output is requested. Downstream IF / Set / Switch nodes can reference `{{ $json.output.* }}` directly without a separate parse step.
+- **`0.4.16`** — Audit P1: sub-node model loaders consolidated to `shared.ts`, `throwBergetError()` helper extracted, OCR-typed models filtered out of the Chat dropdown, `axios` and `form-data` floors bumped, package and node descriptions updated to reflect the actual shipped feature set.
+- **`0.4.17`** — Audit P2: friendly errors when Chat is run with empty messages or Rerank with empty documents, `BergetReranker.toJSON()` defensive override, OCR polling honors the server's `retryAfter` hint, Chat Model `maxTokens` default raised `1024 → 4096`.
+- **`0.4.18`** — Reasoning Effort option exposed on the Chat resource of the Berget AI action node, closing a long-standing inconsistency with the Chat Model sub-node.
+
+### Internal — `uuid` override
+
+Added an `overrides` block in `package.json` forcing `uuid >= 14.0.0` for our local dependency tree. Triggered by GHSA-w5hq-g745-h8pq (medium severity, missing buffer bounds check in `uuid` v3/v5/v6 namespace functions when a `buf` is provided).
+
+The vulnerable APIs are not used by this package — `uuid` is transitive through `@langchain/core`, `langsmith`, and `n8n-workflow` (devDependencies / peerDependencies), and none of those upstream packages have yet published a version that depends on `uuid 14`. The override resolves all three transitive paths to `uuid@14.0.0` in our local install and lockfile, silencing the GitHub Dependabot alert.
+
+End users installing this package into their own n8n instance receive `uuid` from n8n's own dependency tree, not from us — we don't ship `uuid`, and `package-lock.json` is not part of the published tarball (the published `files` list is `["dist"]`). So this override has no effect on runtime behavior for end users; it's purely about keeping the maintainer's own dev tree clean and the alert dashboard quiet.
+
+When upstream `@langchain/core` and `n8n-workflow` eventually bump their `uuid` dependencies past 14, the override becomes a no-op and can be removed.
+
+### No breaking changes
+
+Workflows, node identifiers (`bergetAi`, `bergetAiChatModel`, `bergetAiEmbeddingsModel`, `bergetAiReranker`), credential type (`bergetAiApi`), and the sub-node `supplyData` contracts are unchanged from `0.4.18`. Upgrading from any `0.4.x` to `0.5.0` is a no-op other than the version number.
+
 ## [0.4.18] - 2026-04-25
 
 ### Added
