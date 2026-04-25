@@ -75,7 +75,7 @@ export const speechProperties: INodeProperties[] = [
 				type: 'boolean',
 				default: false,
 				description:
-					'Whether to identify which speaker said what. Adds speaker labels (SPEAKER_00, SPEAKER_01, ...) to each segment. Works best with 2-4 distinct speakers; overlapping speech is a known limitation. ⚠️ Requires Response Format = "Verbose JSON" to actually see the speaker labels in the output — plain JSON drops them.',
+					'Whether to identify which speaker said what. Adds speaker labels (SPEAKER_00, SPEAKER_01, ...) to each segment. Works best with 2-4 distinct speakers; overlapping speech is a known limitation. When enabled, the Response Format is automatically upgraded to "Verbose JSON" if it was left at JSON or Text, so speaker labels actually appear in the output.',
 			},
 			{
 				displayName: 'Word-Level Alignment',
@@ -83,7 +83,7 @@ export const speechProperties: INodeProperties[] = [
 				type: 'boolean',
 				default: false,
 				description:
-					'Whether to add precise per-word timestamps to the transcript. Useful for subtitle generation and word-accurate seeking. Like Diarize, requires Response Format = "Verbose JSON" to actually see the word timestamps.',
+					'Whether to add precise per-word timestamps to the transcript. Useful for subtitle generation and word-accurate seeking. Like Diarize, automatically upgrades the Response Format to "Verbose JSON" if it was left at JSON or Text.',
 			},
 			{
 				displayName: 'Prompt',
@@ -158,7 +158,23 @@ export async function executeSpeech(
 		contentType: binaryData.mimeType ?? 'application/octet-stream',
 	});
 	if (options.language) formData.append('language', options.language);
-	if (options.response_format) formData.append('response_format', options.response_format);
+
+	// Auto-promote response_format to verbose_json when diarize or align is on
+	// and the user left the format at the default 'json' or picked plain 'text'.
+	// Both of those formats discard segment-level data, which means the speaker
+	// labels and word timestamps the user just asked for would silently
+	// disappear. SRT and VTT carry their own segment timing so we leave them
+	// alone if explicitly chosen. Verbose JSON we leave alone too (already
+	// correct).
+	const needsSegmentData = options.diarize || options.align;
+	const userPickedFormat = options.response_format;
+	const effectiveFormat: string | undefined = needsSegmentData
+		? !userPickedFormat || userPickedFormat === 'json' || userPickedFormat === 'text'
+			? 'verbose_json'
+			: userPickedFormat
+		: userPickedFormat;
+	if (effectiveFormat) formData.append('response_format', effectiveFormat);
+
 	if (options.diarize) formData.append('diarize', 'true');
 	if (options.align) formData.append('align', 'true');
 	if (options.prompt) formData.append('prompt', options.prompt);

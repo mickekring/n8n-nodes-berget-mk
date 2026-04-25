@@ -2,6 +2,14 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.12] - 2026-04-16
+
+### Fixed
+
+- **Diarize and Word-Level Alignment now work without manually picking Verbose JSON.** In `0.4.11`, enabling Diarize and leaving Response Format at the default JSON would silently produce a transcript with no speaker labels, because Berget's plain JSON response format drops segment-level data even when `diarize=true` is sent. The option description warned about this but a description warning is easy to miss — the surface symptom was "I turned on speakers but I don't see speakers".
+  - The execute function now auto-promotes Response Format to `verbose_json` whenever Diarize or Word-Level Alignment is enabled AND the user left Response Format at the default JSON or plain Text. Explicit picks of SRT, VTT, or Verbose JSON are preserved.
+  - Diarize and Word-Level Alignment option descriptions updated to mention this auto-promotion so users understand why their format dropdown's effect changed.
+
 ## [0.4.11] - 2026-04-16
 
 ### Added
