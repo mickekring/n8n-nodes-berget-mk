@@ -5,8 +5,7 @@ import type {
 	IExecuteFunctions,
 	INodeProperties,
 } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
-import { BERGET_API_BASE_URL, formatBergetError } from './shared';
+import { BERGET_API_BASE_URL, throwBergetError } from './shared';
 
 const showForSpeech = {
 	displayOptions: {
@@ -208,11 +207,7 @@ export async function executeSpeech(
 	);
 
 	if (response.status !== 200) {
-		throw new NodeOperationError(
-			context.getNode(),
-			formatBergetError('speech', response.status, response.data),
-			{ itemIndex },
-		);
+		throwBergetError(context, itemIndex, 'speech', response.status, response.data);
 	}
 
 	const data = response.data;

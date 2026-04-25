@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest, formatBergetError } from './shared';
+import { bergetRequest, throwBergetError } from './shared';
 
 const showForRerank = {
 	displayOptions: {
@@ -99,6 +99,15 @@ export async function executeRerank(
 	const documents = context.getNodeParameter('rerankDocuments.values', itemIndex, []) as Array<{
 		text: string;
 	}>;
+
+	if (documents.length === 0) {
+		throw new NodeOperationError(
+			context.getNode(),
+			'Berget AI rerank: at least one document is required. Add documents under the Documents field, or upstream this node from one that produces documents.',
+			{ itemIndex },
+		);
+	}
+
 	const options = context.getNodeParameter('rerankOptions', itemIndex, {}) as IDataObject;
 
 	const { status, data } = await bergetRequest(
@@ -114,11 +123,7 @@ export async function executeRerank(
 	);
 
 	if (status !== 200) {
-		throw new NodeOperationError(
-			context.getNode(),
-			formatBergetError('rerank', status, data),
-			{ itemIndex },
-		);
+		throwBergetError(context, itemIndex, 'rerank', status, data);
 	}
 
 	return data as IDataObject;

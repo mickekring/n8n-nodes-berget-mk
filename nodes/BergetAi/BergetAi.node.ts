@@ -50,7 +50,7 @@ export class BergetAi implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["resource"]}}',
 		description:
-			'Use Berget AI for chat completions, document OCR, speech-to-text, and document reranking',
+			'Use Berget AI for chat completions, image analysis, speech-to-text, and document reranking',
 		defaults: { name: 'Berget AI' },
 		usableAsTool: true,
 		codex: {
@@ -116,10 +116,7 @@ export class BergetAi implements INodeType {
 	methods = {
 		loadOptions: {
 			async getChatModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				return loadModelOptions(
-					this,
-					(m) => m.model_type === 'text' || m.model_type === 'ocr',
-				);
+				return loadModelOptions(this, (m) => m.model_type === 'text');
 			},
 			async getVisionModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return loadModelOptions(

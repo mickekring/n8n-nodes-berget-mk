@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest, formatBergetError } from './shared';
+import { bergetRequest, throwBergetError } from './shared';
 
 const showForOcr = {
 	displayOptions: {
@@ -149,6 +149,7 @@ function sleep(ms: number): Promise<void> {
 
 interface OcrPollStatus {
 	status?: string;
+	retryAfter?: number;
 }
 
 export async function executeOcr(
@@ -198,11 +199,7 @@ export async function executeOcr(
 
 	const submission = await bergetRequest(apiKey, 'POST', '/ocr', requestBody);
 	if (submission.status !== 202 && submission.status !== 200) {
-		throw new NodeOperationError(
-			context.getNode(),
-			formatBergetError('OCR submission', submission.status, submission.data),
-			{ itemIndex },
-		);
+		throwBergetError(context, itemIndex, 'OCR submission', submission.status, submission.data);
 	}
 
 	// If Berget ever starts honoring sync again, it'll return a full result at 200.
@@ -267,13 +264,16 @@ export async function executeOcr(
 			const d = poll.data as OcrPollStatus & { error?: { param?: OcrPollStatus } };
 			const observedStatus = d.status ?? d.error?.param?.status;
 			if (observedStatus === 'failed') {
-				throw new NodeOperationError(
-					context.getNode(),
-					formatBergetError('OCR', 202, poll.data) + ` — taskId: ${taskId}`,
-					{ itemIndex },
-				);
+				throwBergetError(context, itemIndex, 'OCR', 202, poll.data, ` — taskId: ${taskId}`);
 			}
-			await sleep(intervalSeconds * 1000);
+			// Honor the server's retryAfter hint (milliseconds). If shorter than
+			// the user-configured floor, stick with the floor. Cap at the
+			// remaining deadline so we don't oversleep past the timeout.
+			const serverHintMs = d.retryAfter ?? d.error?.param?.retryAfter;
+			const minMs = intervalSeconds * 1000;
+			const remainingMs = Math.max(0, deadline - Date.now());
+			const waitMs = Math.min(Math.max(serverHintMs ?? minMs, minMs), remainingMs);
+			await sleep(waitMs);
 			continue;
 		}
 
@@ -285,11 +285,7 @@ export async function executeOcr(
 			);
 		}
 
-		throw new NodeOperationError(
-			context.getNode(),
-			formatBergetError('OCR polling', poll.status, poll.data) + ` — taskId: ${taskId}`,
-			{ itemIndex },
-		);
+		throwBergetError(context, itemIndex, 'OCR polling', poll.status, poll.data, ` — taskId: ${taskId}`);
 	}
 
 	throw new NodeOperationError(

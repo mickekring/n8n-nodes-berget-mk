@@ -1,5 +1,4 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
-import axios from 'axios';
 import {
 	NodeConnectionTypes,
 	type ILoadOptionsFunctions,
@@ -9,15 +8,7 @@ import {
 	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-const BERGET_API_BASE_URL = 'https://api.berget.ai/v1';
-
-interface BergetModel {
-	id: string;
-	name?: string;
-	model_type?: string;
-	owned_by?: string;
-}
+import { BERGET_API_BASE_URL, loadModelOptions } from '../BergetAi/shared';
 
 export class BergetAiEmbeddingsModel implements INodeType {
 	description: INodeTypeDescription = {
@@ -105,21 +96,7 @@ export class BergetAiEmbeddingsModel implements INodeType {
 			async getEmbeddingsModels(
 				this: ILoadOptionsFunctions,
 			): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('bergetAiApi');
-				const response = await axios.get(`${BERGET_API_BASE_URL}/models`, {
-					headers: {
-						Authorization: `Bearer ${credentials.apiKey as string}`,
-						'Content-Type': 'application/json',
-					},
-				});
-				const models: BergetModel[] = response.data?.data ?? [];
-				return models
-					.filter((m) => m.model_type === 'embedding')
-					.map((m) => ({
-						name: m.id,
-						value: m.id,
-					}))
-					.sort((a, b) => a.name.localeCompare(b.name));
+				return loadModelOptions(this, (m) => m.model_type === 'embedding');
 			},
 		},
 	};

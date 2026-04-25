@@ -2,6 +2,71 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.18] - 2026-04-25
+
+### Added
+
+- **`Reasoning Effort` option on the Chat resource of the Berget AI action node.** Closes a long-standing inconsistency: the `Berget AI Chat Model` sub-node has had this option since `0.2.x`, but the Chat resource of the action node — used for one-shot classification and extraction calls — did not, so users who picked a reasoning-capable model (`openai/gpt-oss-120b`, `zai-org/GLM-4.7-FP8`) couldn't tune the effort level. The option mirrors the sub-node's: Low / Medium / High, default Medium, sent as `reasoning_effort` in the request body. Non-reasoning models silently ignore the parameter, so it's safe to leave on for any text model. The option's description explicitly notes that Berget does not flag reasoning capability in `/v1/models`, so the model dropdown is not filtered — users pick the model themselves.
+
+### Notes on Berget's `/v1/models` capability flags
+
+Inspected the live response while planning this change. Berget exposes seven capability keys per model: `classification`, `embeddings`, `formatted_output`, `function_calling`, `json_mode`, `streaming`, `vision`. There is **no `reasoning` flag**. We considered maintaining a hardcoded reasoning-models allowlist in `shared.ts` to filter the dropdown, but rejected it for the same reason we don't override the vision flag: it would drift every time Berget added or removed a model and would mean shipping a package update for upstream catalog changes. "Send the parameter and let the model handle it" is the correct strategy until Berget adds the flag.
+
+The vision flag itself is also imperfect (verified live 2026-04-25): `openai/gpt-oss-120b` is flagged as vision-capable but does not actually accept images, while `google/gemma-4-31B-it` is multimodal but has no flag. We continue to trust Berget's metadata as the source of truth — fixes belong upstream, not in this package.
+
+## [0.4.17] - 2026-04-25
+
+Second half of the post-0.4.x code audit. Four small, independent improvements driven by the audit findings — no functional regressions, all backwards-compatible. Once verified live, this content rolls into the `0.5.0` milestone release.
+
+### Added
+
+- **`BergetReranker.toJSON()` override.** The custom `BaseDocumentCompressor` subclass used by the Berget AI Reranker sub-node now overrides `toJSON()` to omit the API key when LangChain's tracer or callback infrastructure serialises the instance for logging. `ChatOpenAI` and `OpenAIEmbeddings` opt-out their secret fields via `lc_secrets`, but `BaseDocumentCompressor` has no equivalent — so we did it manually. Defensive only; no leak was observed in practice.
+
+### Changed
+
+- **OCR polling loop honors Berget's `retryAfter` server hint.** Previously the loop slept for the user-configured `pollingIntervalSeconds` regardless of the server's per-poll suggestion. Berget returns `retryAfter` (milliseconds) on every 202 response, both at the top level (`{ status: 'processing', retryAfter: 2000 }`) and nested in the error object form. The new loop reads either location, takes `max(serverHintMs, userFloorMs)`, and clamps to the remaining deadline so we never oversleep past the timeout. Currently dormant since OCR is UI-hidden; in effect once OCR is re-enabled.
+- **Default `maxTokens` in the Berget AI Chat Model sub-node bumped from `1024` to `4096`.** Only matters if the user explicitly adds the option to the collection — most n8n Agent runs leave it unset and let the model decide. But if a user opts in (typically wanting *more* control, often *more* tokens), a 1024 prefilled value is too low for many real Agent and Chain workloads. `4096` is a reasonable starting point. Description updated to describe the field as a cap rather than promising "leave blank to let the model decide" (n8n number fields can't be blank).
+
+### Fixed
+
+- **Friendlier errors when Chat is run with zero messages or Rerank with zero documents.** Previously these passed `messages: []` / `documents: []` straight through to Berget, which returned an opaque HTTP 400. The node now throws a clear `NodeOperationError` upfront pointing the user at the field they need to fill. Helps especially when this node is wired to a misconfigured upstream that produces no items.
+
+## [0.4.16] - 2026-04-25
+
+First half of the post-0.4.x code audit (full audit run by four specialized agents covering quality, security, refactoring, and performance). No functional changes from a user's perspective — all bug fixes are in dropdowns, internal helpers, and dependency floors. The user-facing P2 cleanups (empty-array UX, Reranker `toJSON` defense, OCR `Retry-After` honor, `maxTokens` default bump) land next, then `0.5.0` as the milestone release.
+
+### Fixed
+
+- **OCR-typed models no longer leak into the Chat resource model dropdown.** The `getChatModels` loadOptions filter previously matched `model_type === 'text' || model_type === 'ocr'`, a holdover from when the action node tried to share the chat dropdown with the OCR resource. Since OCR has been UI-hidden since `0.4.4`, the only effect was that a user could pick an OCR model in the Chat dropdown and get an opaque inference-time failure. Filter is now `model_type === 'text'` exactly.
+
+### Changed
+
+- **`axios` floor bumped from `^1.12.2` to `^1.15.0`.** Hygiene only — current latest, no CVE forces it. Resolved tree picks 1.15.0.
+- **`form-data` floor bumped from `^4.0.0` to `^4.0.5`.** Blocks the 2025 boundary-predictability advisory (GHSA-fjxv-7rqg-78g4) that affected `<4.0.4`. Resolved tree picks 4.0.5.
+- **Package and node descriptions updated** to reflect the actual shipped feature set: dropped "document OCR" (hidden since 0.4.4), added "image analysis" (added in 0.4.6) and "Reranker" sub-node (added in 0.4.9).
+
+### Internal
+
+- **`throwBergetError(context, itemIndex, label, status, data, suffix?)` helper added to `shared.ts`** and applied in all four active resource modules (chat, image, rerank, speech) plus three of the six throw sites in the dormant `ocr.ts`. Replaces the repeated `throw new NodeOperationError(context.getNode(), formatBergetError(...), { itemIndex })` boilerplate. Behavior identical; ~25 LOC saved; one obvious pattern instead of five copies.
+- **Sub-node model loaders consolidated.** `BergetAiChatModel`, `BergetAiEmbeddingsModel`, and `BergetAiReranker` previously each redeclared `BERGET_API_BASE_URL`, a local `BergetModel` interface, and a copy of the axios `/v1/models` fetch + filter + sort. All three now import `loadModelOptions` and `BERGET_API_BASE_URL` from `nodes/BergetAi/shared.ts` (the action node's existing helper). ~45 LOC saved across the three files. The `BergetReranker` LangChain class still uses axios directly because it needs a per-call `timeout` option that `bergetRequest` doesn't expose; consolidating that is out of scope.
+- **Net change across the package**: −47 LOC, 11 files touched, build still clean at `tsc --strict`.
+
+### Audit context
+
+The audit was run by four specialized subagents in parallel (code quality, security, refactoring, performance) against the v0.4.15 source. **Zero critical findings, zero new security issues since the v0.4.1 review.** The other audit findings — empty-array UX guards, custom Reranker `toJSON()` defense, OCR `Retry-After` honor in the polling loop, raising the `maxTokens` default in the Chat Model sub-node — are tracked for the next release.
+
+The audit also caught one **false positive** worth recording: the `timestamp_granularities[]` form-field name in `nodes/BergetAi/speech.ts` was flagged as a bug, but the `[]` suffix IS the OpenAI Whisper API convention for multipart array params. Not a bug, do not change.
+
+## [0.4.15] - 2026-04-25
+
+### Added
+
+- **Top-level `output` field on Chat responses when JSON output is requested.** When Response Format is set to `JSON Object` or `JSON Schema`, the assistant's content string is parsed and surfaced as a structured `output` object on the node's response. Downstream nodes (IF, Set, Switch, etc.) can now reference fields like `{{ $json.output.contains }}` directly — no Code/Set node needed to `JSON.parse` the content first.
+
+  Previously the parsed JSON only existed as a string inside `choices[0].message.content`, which n8n's expression UI cannot drill into. This matches the ergonomics of n8n's built-in OpenAI node, where structured JSON output appears as draggable fields rather than a stringified blob.
+
+  Purely additive: the original `choices[0].message.content` string is preserved unchanged. If the model returns malformed JSON despite the response_format hint, `output` is simply absent and the raw string is still available for manual parsing.
+
 ## [0.4.14] - 2026-04-25
 
 ### Fixed

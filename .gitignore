@@ -2,6 +2,7 @@
 node_modules
 dist
 .env
+BERGET.md
 
 # Local test assets — never commit recordings, sample documents, etc.
 *.mp3

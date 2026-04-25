@@ -1,5 +1,4 @@
 import { ChatOpenAI } from '@langchain/openai';
-import axios from 'axios';
 import {
 	NodeConnectionTypes,
 	type ILoadOptionsFunctions,
@@ -9,16 +8,7 @@ import {
 	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-const BERGET_API_BASE_URL = 'https://api.berget.ai/v1';
-
-interface BergetModel {
-	id: string;
-	name?: string;
-	model_type?: string;
-	owned_by?: string;
-	capabilities?: { function_calling?: boolean };
-}
+import { BERGET_API_BASE_URL, loadModelOptions } from '../BergetAi/shared';
 
 export class BergetAiChatModel implements INodeType {
 	description: INodeTypeDescription = {
@@ -79,9 +69,9 @@ export class BergetAiChatModel implements INodeType {
 						name: 'maxTokens',
 						type: 'number',
 						typeOptions: { minValue: 1 },
-						default: 1024,
+						default: 4096,
 						description:
-							'The maximum number of tokens to generate in the completion. Leave blank to let the model decide.',
+							'The maximum number of tokens to generate in the completion. The default of 4096 is a reasonable starting point for most Agent and Chain workloads — raise it for long-form generation, lower it to cap cost.',
 					},
 					{
 						displayName: 'Presence Penalty',
@@ -162,21 +152,7 @@ export class BergetAiChatModel implements INodeType {
 	methods = {
 		loadOptions: {
 			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('bergetAiApi');
-				const response = await axios.get(`${BERGET_API_BASE_URL}/models`, {
-					headers: {
-						Authorization: `Bearer ${credentials.apiKey as string}`,
-						'Content-Type': 'application/json',
-					},
-				});
-				const models: BergetModel[] = response.data?.data ?? [];
-				return models
-					.filter((m) => m.model_type === 'text')
-					.map((m) => ({
-						name: m.id,
-						value: m.id,
-					}))
-					.sort((a, b) => a.name.localeCompare(b.name));
+				return loadModelOptions(this, (m) => m.model_type === 'text');
 			},
 		},
 	};

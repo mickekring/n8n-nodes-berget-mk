@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest, formatBergetError } from './shared';
+import { bergetRequest, throwBergetError } from './shared';
 
 const showForChat = {
 	displayOptions: {
@@ -78,6 +78,19 @@ export const chatProperties: INodeProperties[] = [
 				description: 'Maximum number of tokens to generate',
 			},
 			{
+				displayName: 'Reasoning Effort',
+				name: 'reasoning_effort',
+				type: 'options',
+				options: [
+					{ name: 'Low', value: 'low', description: 'Favor speed, use fewer reasoning tokens' },
+					{ name: 'Medium', value: 'medium', description: 'Balance speed and accuracy' },
+					{ name: 'High', value: 'high', description: 'Favor accuracy, use more reasoning tokens' },
+				],
+				default: 'medium',
+				description:
+					'Controls how much thinking a reasoning-capable model performs (GPT-OSS, GLM-4.7, DeepSeek R1, etc.). Berget does not flag reasoning-capable models in /v1/models, so the dropdown is not filtered — pick a reasoning model yourself. The parameter is silently ignored by non-reasoning models.',
+			},
+			{
 				displayName: 'Response Format',
 				name: 'response_format',
 				type: 'options',
@@ -88,7 +101,7 @@ export const chatProperties: INodeProperties[] = [
 				],
 				default: 'text',
 				description:
-					'Force the model to return a specific response format. "JSON Object" tells the model to return any valid JSON. "JSON Schema" enforces a specific JSON schema you provide — set the schema with the JSON Schema fields below.',
+					'Force the model to return a specific response format. "JSON Object" tells the model to return any valid JSON. "JSON Schema" enforces a specific JSON schema you provide — set the schema with the JSON Schema fields below. When either is selected, the parsed JSON is also exposed as a top-level "output" field on the node\'s output so downstream nodes (IF, Set, etc.) can reference its properties directly.',
 			},
 			{
 				displayName: 'JSON Schema Name',
@@ -148,6 +161,15 @@ export async function executeChat(
 		role: string;
 		content: string;
 	}>;
+
+	if (messages.length === 0) {
+		throw new NodeOperationError(
+			context.getNode(),
+			'Berget AI chat: at least one message is required. Add a message under the Messages field.',
+			{ itemIndex },
+		);
+	}
+
 	const options = context.getNodeParameter('chatOptions', itemIndex, {}) as IDataObject & {
 		response_format?: 'text' | 'json_object' | 'json_schema';
 		json_schema?: string | IDataObject;
@@ -209,12 +231,26 @@ export async function executeChat(
 	);
 
 	if (status !== 200) {
-		throw new NodeOperationError(
-			context.getNode(),
-			formatBergetError('chat', status, data),
-			{ itemIndex },
-		);
+		throwBergetError(context, itemIndex, 'chat', status, data);
 	}
 
-	return data as IDataObject;
+	const result = data as IDataObject;
+
+	if (responseFormat === 'json_object' || responseFormat === 'json_schema') {
+		const choices = result.choices as Array<{ message?: { content?: unknown } }> | undefined;
+		const rawContent = choices?.[0]?.message?.content;
+		if (typeof rawContent === 'string' && rawContent.trim().length > 0) {
+			try {
+				const parsed = JSON.parse(rawContent);
+				if (parsed && typeof parsed === 'object') {
+					result.output = parsed as IDataObject;
+				}
+			} catch {
+				// Model returned non-JSON despite response_format being set.
+				// Leave output absent; raw string stays in choices[0].message.content.
+			}
+		}
+	}
+
+	return result;
 }

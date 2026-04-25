@@ -4,8 +4,8 @@ n8n community nodes for [Berget AI](https://berget.ai), packaged as a single ins
 
 Four nodes:
 
-- **Berget AI** — multi-resource action node for one-shot calls. Resources: **Chat** (completions, classification, JSON Schema structured output), **Image Analysis** (vision-capable models), **Rerank** (document reranking), and **Speech to Text** (Swedish-tuned KB-Whisper, with optional diarization and word-level alignment). Can also be exposed as a tool to an AI Agent. (OCR is temporarily hidden — see [CHANGELOG.md](CHANGELOG.md) for `0.4.4` for details.)
-- **Berget AI Chat Model** — sub-node that plugs into n8n's built-in **AI Agent**, **Basic LLM Chain**, and other LangChain-based nodes. Exposes `reasoning_effort` and the full standard LLM parameter set.
+- **Berget AI** — multi-resource action node for one-shot calls. Resources: **Chat** (completions, classification, JSON Schema structured output, reasoning effort for GPT-OSS / GLM-4.7 / etc.), **Image Analysis** (vision-capable models), **Rerank** (document reranking), and **Speech to Text** (Swedish-tuned KB-Whisper, with optional diarization and word-level alignment). Can also be exposed as a tool to an AI Agent. (OCR is temporarily hidden — see [CHANGELOG.md](CHANGELOG.md) for `0.4.4` for details.)
+- **Berget AI Chat Model** — sub-node that plugs into n8n's built-in **AI Agent**, **Basic LLM Chain**, and other LangChain-based nodes. Exposes reasoning effort and the full standard LLM parameter set.
 - **Berget AI Embeddings Model** — sub-node that plugs into n8n's **Vector Store** nodes (Supabase, Qdrant, Pinecone, PGVector, etc.) and **Question and Answer Chain**.
 - **Berget AI Reranker** — sub-node that plugs into Vector Store retrievers via the `AiReranker` connection, reordering candidates by relevance before they reach the agent or chain.
 
@@ -27,7 +27,9 @@ Then add a **Berget AI API** credential with your API key from [berget.ai](https
 
 1. Drop **Berget AI** onto the canvas, pick Resource = **Chat**, select a model, add a user message. Execute.
 
-For classification or structured extraction tasks, set **Options → Response Format = JSON Schema** and provide a schema. The model is forced to return parseable JSON conforming to your shape — no regex scraping of free-form text.
+For classification or structured extraction tasks, set **Options → Response Format = JSON Object** or **JSON Schema** (with a schema you provide). The model is forced to return parseable JSON — no regex scraping of free-form text. The parsed JSON is exposed as a top-level **`output`** field on the node's response, so a downstream **IF**, **Set**, or **Switch** node can reference its properties directly with expressions like `{{ $json.output.category }}` or `{{ $json.output.contains }}` — no extra parse step needed.
+
+For reasoning-capable models (`openai/gpt-oss-120b`, `zai-org/GLM-4.7-FP8`, etc.), set **Options → Reasoning Effort = High** to crank up the model's thinking budget. The parameter is silently ignored by non-reasoning models, so it's safe to leave on. (Berget does not currently flag reasoning-capable models in `/v1/models`, so the model dropdown is not filtered — pick the reasoning model yourself.)
 
 ### Agent with tools and memory
 

@@ -1,5 +1,10 @@
 import axios from 'axios';
-import type { ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
+import {
+	NodeOperationError,
+	type IExecuteFunctions,
+	type ILoadOptionsFunctions,
+	type INodePropertyOptions,
+} from 'n8n-workflow';
 
 export const BERGET_API_BASE_URL = 'https://api.berget.ai/v1';
 
@@ -115,4 +120,21 @@ export function formatBergetError(resourceLabel: string, status: number, data: u
 	}
 
 	return parts.join(' — ');
+}
+
+/**
+ * Throw a NodeOperationError formatted with `formatBergetError`. Keeps the
+ * five `if (status !== 200) throw ...` blocks in the resource modules
+ * down to a single line each.
+ */
+export function throwBergetError(
+	context: IExecuteFunctions,
+	itemIndex: number,
+	resourceLabel: string,
+	status: number,
+	data: unknown,
+	suffix?: string,
+): never {
+	const message = formatBergetError(resourceLabel, status, data) + (suffix ?? '');
+	throw new NodeOperationError(context.getNode(), message, { itemIndex });
 }

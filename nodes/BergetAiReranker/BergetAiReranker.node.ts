@@ -11,13 +11,7 @@ import {
 	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-
-const BERGET_API_BASE_URL = 'https://api.berget.ai/v1';
-
-interface BergetModel {
-	id: string;
-	model_type?: string;
-}
+import { BERGET_API_BASE_URL, loadModelOptions } from '../BergetAi/shared';
 
 interface BergetRerankResult {
 	index: number;
@@ -62,6 +56,19 @@ class BergetReranker extends BaseDocumentCompressor {
 		this.model = params.model;
 		this.topN = params.topN;
 		this.timeoutMs = params.timeoutMs;
+	}
+
+	// LangChain's tracer / callback infrastructure may JSON-serialize this
+	// instance for logging. ChatOpenAI / OpenAIEmbeddings opt their apiKey
+	// out via lc_secrets, but BaseDocumentCompressor has no equivalent. We
+	// override toJSON() to be safe — never let the API key end up in a log.
+	toJSON() {
+		return {
+			lc_namespace: ['berget', 'reranker'],
+			model: this.model,
+			topN: this.topN,
+			timeoutMs: this.timeoutMs,
+		};
 	}
 
 	async compressDocuments(
@@ -180,18 +187,7 @@ export class BergetAiReranker implements INodeType {
 	methods = {
 		loadOptions: {
 			async getRerankModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const credentials = await this.getCredentials('bergetAiApi');
-				const response = await axios.get(`${BERGET_API_BASE_URL}/models`, {
-					headers: {
-						Authorization: `Bearer ${credentials.apiKey as string}`,
-						'Content-Type': 'application/json',
-					},
-				});
-				const models: BergetModel[] = response.data?.data ?? [];
-				return models
-					.filter((m) => m.model_type === 'rerank')
-					.map((m) => ({ name: m.id, value: m.id }))
-					.sort((a, b) => a.name.localeCompare(b.name));
+				return loadModelOptions(this, (m) => m.model_type === 'rerank');
 			},
 		},
 	};

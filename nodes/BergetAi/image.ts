@@ -4,7 +4,7 @@ import type {
 	INodeProperties,
 } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
-import { bergetRequest, formatBergetError } from './shared';
+import { bergetRequest, throwBergetError } from './shared';
 
 const showForImage = {
 	displayOptions: {
@@ -191,11 +191,7 @@ export async function executeImage(
 	);
 
 	if (status !== 200) {
-		throw new NodeOperationError(
-			context.getNode(),
-			formatBergetError('image analysis', status, data),
-			{ itemIndex },
-		);
+		throwBergetError(context, itemIndex, 'image analysis', status, data);
 	}
 
 	return data as IDataObject;

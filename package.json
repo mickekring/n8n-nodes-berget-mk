@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-berget-mk",
-  "version": "0.4.14",
-  "description": "n8n community node for Berget AI. Multi-resource action node (chat, OCR, rerank, speech-to-text) plus Chat Model and Embeddings Model sub-nodes that plug into n8n's built-in AI Agent and Vector Store nodes.",
+  "version": "0.4.18",
+  "description": "n8n community node for Berget AI. Multi-resource action node (chat, image analysis, rerank, speech-to-text) plus Chat Model, Embeddings Model, and Reranker sub-nodes that plug into n8n's built-in AI Agent and Vector Store nodes.",
   "keywords": [
     "n8n-community-node-package",
     "n8n",
@@ -37,8 +37,8 @@
     "dist"
   ],
   "dependencies": {
-    "axios": "^1.12.2",
-    "form-data": "^4.0.0"
+    "axios": "^1.15.0",
+    "form-data": "^4.0.5"
   },
   "devDependencies": {
     "@langchain/core": "^1.1.39",
