@@ -2,6 +2,28 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.13] - 2026-04-25
+
+### Added
+
+- **`speaker_transcript` field on diarized Speech to Text output.** When Diarize is enabled, the response now includes a single ready-to-use string formatted like:
+
+  ```text
+  SPEAKER_00:
+  First speaker's lines, joined into one paragraph.
+
+  SPEAKER_01:
+  Reply from the second speaker.
+  ```
+
+  This is what almost everyone wants when they enable diarization. Previously users had to walk through `segments[i].words[j].speaker` themselves, looking up which speaker said which words and assembling the transcript by hand — useful for power users but ergonomically wrong for the common case.
+
+  The new field is built by walking the verbose_json `segments` array, determining each segment's dominant speaker (from `segment.speaker` if present, else from the first word's speaker), grouping consecutive same-speaker segments into one paragraph per turn, and using the segment's `text` field directly so model-produced punctuation and capitalization are preserved.
+
+  The raw `segments`, `words`, and per-word timestamps are still on the response object — `speaker_transcript` is purely additive, so workflows that already drilled into the segment tree continue to work unchanged.
+
+- Diarize option description now shows the speaker_transcript output format inline so users understand what they'll get.
+
 ## [0.4.12] - 2026-04-16
 
 ### Fixed

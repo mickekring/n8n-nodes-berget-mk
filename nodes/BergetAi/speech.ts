@@ -75,7 +75,7 @@ export const speechProperties: INodeProperties[] = [
 				type: 'boolean',
 				default: false,
 				description:
-					'Whether to identify which speaker said what. Adds speaker labels (SPEAKER_00, SPEAKER_01, ...) to each segment. Works best with 2-4 distinct speakers; overlapping speech is a known limitation. When enabled, the Response Format is automatically upgraded to "Verbose JSON" if it was left at JSON or Text, so speaker labels actually appear in the output.',
+					'Whether to identify which speaker said what. When enabled, the response will include a "speaker_transcript" field formatted like:\n\nSPEAKER_00:\nFirst speaker\'s lines.\n\nSPEAKER_01:\nReply from the second speaker.\n\nThe raw segment + word-level timestamps with per-word speaker labels are also preserved in the response under "segments" if you need to drill in. Works best with 2-4 distinct speakers; overlapping speech is a known limitation. The Response Format is automatically upgraded to "Verbose JSON" if it was left at JSON or Text, so the data is actually returned.',
 			},
 			{
 				displayName: 'Word-Level Alignment',
@@ -215,5 +215,85 @@ export async function executeSpeech(
 		);
 	}
 
-	return response.data as IDataObject;
+	const data = response.data;
+
+	// When the user enabled Diarize and we got a structured verbose_json back,
+	// also produce a "speaker_transcript" field — a single human-readable string
+	// formatted like:
+	//
+	//   SPEAKER_00:
+	//   First speaker's lines, joined into one paragraph.
+	//
+	//   SPEAKER_01:
+	//   Second speaker's reply.
+	//
+	// 99% of users who turn diarization on want this shape, not a tree of
+	// segments and word timestamps. The raw segments/words/timestamps are
+	// still preserved on the result object so power users can drill into
+	// them when needed.
+	if (
+		options.diarize &&
+		data &&
+		typeof data === 'object' &&
+		Array.isArray((data as IDataObject).segments)
+	) {
+		const segments = (data as IDataObject).segments as TranscriptionSegment[];
+		const transcript = buildSpeakerTranscript(segments);
+		if (transcript) {
+			(data as IDataObject).speaker_transcript = transcript;
+		}
+	}
+
+	return data as IDataObject;
+}
+
+interface TranscriptionWord {
+	word?: string;
+	text?: string;
+	speaker?: string;
+}
+
+interface TranscriptionSegment {
+	text?: string;
+	speaker?: string;
+	words?: TranscriptionWord[];
+}
+
+/**
+ * Build a "SPEAKER_00:\n...text...\n\nSPEAKER_01:\n..." style transcript
+ * by walking the segments array, grouping consecutive segments that share
+ * a speaker into a single paragraph per speaker turn.
+ *
+ * Each segment's speaker is determined as:
+ *   1. segment.speaker if present (segment-level diarization)
+ *   2. otherwise the speaker of the segment's first word (word-level)
+ *   3. otherwise "UNKNOWN" (rare; only when diarization had low confidence)
+ *
+ * Segment text is preferred over re-joining words because the model produces
+ * better punctuation and capitalization at segment level.
+ */
+function buildSpeakerTranscript(segments: TranscriptionSegment[]): string {
+	if (!Array.isArray(segments) || segments.length === 0) return '';
+
+	const labeled = segments.map((seg) => {
+		let speaker: string | undefined = seg.speaker;
+		if (!speaker && Array.isArray(seg.words) && seg.words.length > 0) {
+			speaker = seg.words[0].speaker;
+		}
+		const text = (seg.text ?? '').trim();
+		return { speaker: speaker ?? 'UNKNOWN', text };
+	});
+
+	const groups: Array<{ speaker: string; text: string }> = [];
+	for (const seg of labeled) {
+		if (!seg.text) continue;
+		const last = groups[groups.length - 1];
+		if (last && last.speaker === seg.speaker) {
+			last.text += ' ' + seg.text;
+		} else {
+			groups.push({ speaker: seg.speaker, text: seg.text });
+		}
+	}
+
+	return groups.map((g) => `${g.speaker}:\n${g.text}`).join('\n\n');
 }
