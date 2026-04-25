@@ -4,23 +4,26 @@ Guidance for Claude Code when working in this repository.
 
 ## What this is
 
-**A single npm package that ships three n8n community nodes for [Berget AI](https://berget.ai)** — a Swedish AI inference provider (EU-hosted, GDPR-friendly, open-source models: Llama, Mistral, Qwen, DeepSeek, GPT-OSS, KB-Whisper, etc.).
+**A single npm package that ships four n8n community nodes for [Berget AI](https://berget.ai)** — a Swedish AI inference provider (EU-hosted, GDPR-friendly, open-source models: Llama, Mistral, Qwen, DeepSeek, GPT-OSS, KB-Whisper, etc.).
 
 Published to npm as **`n8n-nodes-berget-mk`**, maintained by Micke Kring. This is a standalone repo, not tracking any upstream — the codebase originated from the open-source Berget AI n8n nodes (MIT) and has been restructured repeatedly through the `0.1.x` → `0.2.x` → `0.3.x` series. Treat this as "our repo"; do not propose pulling from or rebasing against any other source.
 
-## The three shipped nodes
+## The four shipped nodes
 
-1. **`Berget AI`** (`bergetAi`) — a **multi-resource action node** with a `Resource` dropdown that switches between four capabilities:
-    - **Chat** — one-shot chat completions (most used for Micke's classification workflows)
-    - **OCR** — extract text from PDF/DOCX/PPTX/HTML/images (sync + async)
-    - **Rerank** — rerank documents by relevance
-    - **Speech to Text** — audio transcription (defaults to Swedish, KB-Whisper)
+1. **`Berget AI`** (`bergetAi`) — a **multi-resource action node** with a `Resource` dropdown. Visible resources:
+    - **Chat** — one-shot chat completions (most used for Micke's classification workflows). Supports JSON Schema structured output for forced-shape responses.
+    - **Image Analysis** — vision queries against vision-capable models. Filtered model dropdown via `capabilities.vision === true`. Accepts both binary input from upstream nodes and direct image URLs.
+    - **Rerank** — rerank a query+documents array by relevance. Action-resource form, useful for two-stage retrieval pipelines that don't go through a Vector Store.
+    - **Speech to Text** — audio transcription (defaults to Swedish, KB-Whisper). Supports diarization (`diarize=true`) which adds a synthesized `speaker_transcript` field to the output formatted as readable per-speaker paragraphs. Also supports word-level alignment, hotwords, prompts, and timestamp granularities.
+    - **OCR** is **hidden from the UI** as of `0.4.4` because Berget's OCR backend is currently broken. Implementation lives at [nodes/BergetAi/ocr.ts](nodes/BergetAi/ocr.ts) and re-enabling is four marked uncomments in [BergetAi.node.ts](nodes/BergetAi/BergetAi.node.ts) — see the block comment at the top of that file.
 
     Has `usableAsTool: true` so it can be exposed as an agent-callable tool. Codex `subcategories: { AI: ['Agents', 'Miscellaneous', 'Root Nodes'] }` puts it in the top-level AI Nodes palette alongside OpenAI / Anthropic / Google Gemini / Ollama cards.
 
 2. **`Berget AI Chat Model`** (`bergetAiChatModel`) — a **sub-node** that supplies a LangChain `ChatOpenAI` instance to n8n's built-in **AI Agent**, **Basic LLM Chain**, and other LangChain-based parent nodes via the `AiLanguageModel` connection type. Points `ChatOpenAI` at Berget's OpenAI-compatible `/v1` endpoint. Exposes `reasoning_effort` and the standard LLM parameter set.
 
-3. **`Berget AI Embeddings Model`** (`bergetAiEmbeddingsModel`) — a **sub-node** that supplies a LangChain `OpenAIEmbeddings` instance to parent **Vector Store** nodes (Supabase, Qdrant, Pinecone, PGVector, etc.) and **Question and Answer Chain** via the `AiEmbedding` connection type. Points `OpenAIEmbeddings` at Berget's OpenAI-compatible `/v1/embeddings` endpoint. Dynamic model loading filters for `model_type === 'embedding'`.
+3. **`Berget AI Embeddings Model`** (`bergetAiEmbeddingsModel`) — a **sub-node** that supplies a LangChain `OpenAIEmbeddings` instance to parent **Vector Store** nodes (Supabase, Qdrant, Pinecone, PGVector, etc.) and **Question and Answer Chain** via the `AiEmbedding` connection type. Points `OpenAIEmbeddings` at Berget's OpenAI-compatible `/v1/embeddings` endpoint. Dynamic model loading filters for `model_type === 'embedding'`. Has a `Dimensions` option that defaults to `0` (off) — Berget's backend currently rejects the dimensions parameter (returns HTTP 503), see CHANGELOG `0.4.8`.
+
+4. **`Berget AI Reranker`** (`bergetAiReranker`) — a **sub-node** that plugs into Vector Store retrievers via the `AiReranker` connection type. Implemented as a custom `BaseDocumentCompressor` subclass (from `@langchain/core/retrievers/document_compressors`) that calls `/v1/rerank` and reorders the candidate documents while preserving original LangChain Document metadata. Reads the response `results` array tolerantly (Berget's runtime returns `results` even though the spec declares `data` — see CHANGELOG `0.4.10`).
 
 ## Repository layout
 
@@ -33,17 +36,21 @@ Published to npm as **`n8n-nodes-berget-mk`**, maintained by Micke Kring. This i
 ├── nodes/
 │   ├── BergetAi/                    # The multi-resource action node
 │   │   ├── BergetAi.node.ts         # Main class: description + dispatch
-│   │   ├── shared.ts                # Shared axios helpers + model loader
-│   │   ├── chat.ts                  # Chat resource: properties + execute
-│   │   ├── ocr.ts                   # OCR resource
-│   │   ├── rerank.ts                # Rerank resource
-│   │   ├── speech.ts                # Speech-to-text resource
+│   │   ├── shared.ts                # Shared axios helpers + model loader + formatBergetError
+│   │   ├── chat.ts                  # Chat resource: properties + execute (JSON Schema support)
+│   │   ├── image.ts                 # Image Analysis resource (vision)
+│   │   ├── ocr.ts                   # OCR resource (currently UI-hidden, see BergetAi.node.ts)
+│   │   ├── rerank.ts                # Rerank resource (action form)
+│   │   ├── speech.ts                # Speech-to-text resource (diarization, alignment, etc.)
 │   │   └── bergetai.svg
 │   ├── BergetAiChatModel/           # LangChain ChatOpenAI sub-node
 │   │   ├── BergetAiChatModel.node.ts
 │   │   └── bergetai.svg
-│   └── BergetAiEmbeddingsModel/     # LangChain OpenAIEmbeddings sub-node
-│       ├── BergetAiEmbeddingsModel.node.ts
+│   ├── BergetAiEmbeddingsModel/     # LangChain OpenAIEmbeddings sub-node
+│   │   ├── BergetAiEmbeddingsModel.node.ts
+│   │   └── bergetai.svg
+│   └── BergetAiReranker/            # LangChain BaseDocumentCompressor sub-node
+│       ├── BergetAiReranker.node.ts
 │       └── bergetai.svg
 ├── scripts/
 │   └── copy-assets.js        # Post-tsc step that copies SVGs into dist/
@@ -60,21 +67,24 @@ One package, one `tsc` run, one `dist/`, one `npm publish`. No workspaces, no su
 `BergetAi.node.ts` is the main class. It:
 
 1. Declares the node description with a `resource` dropdown and imports each resource module's property array.
-2. Declares `methods.loadOptions` with per-resource model loaders (`getChatModels`, `getEmbeddingsModels`, `getRerankModels`, `getSpeechModels`) — each one calls the shared `loadModelOptions()` helper with a different `model_type` filter.
+2. Declares `methods.loadOptions` with per-resource model loaders (`getChatModels`, `getVisionModels`, `getRerankModels`, `getSpeechModels`) — each one calls the shared `loadModelOptions()` helper with a different filter (`model_type` for most, `capabilities.vision === true` for vision).
 3. Implements `execute()` which switch-dispatches to the resource module's `executeX()` function based on the `resource` parameter.
 
-Each resource module (`chat.ts`, `embeddings.ts`, `ocr.ts`, `rerank.ts`, `speech.ts`) exports:
+Each resource module (`chat.ts`, `image.ts`, `ocr.ts`, `rerank.ts`, `speech.ts`) exports:
 
 - A `*Properties: INodeProperties[]` array with `displayOptions.show.resource: ['<name>']` on every field so they only appear when that resource is selected.
 - An `execute*()` async function with signature `(context: IExecuteFunctions, itemIndex: number) => Promise<IDataObject>` — takes the context explicitly rather than via `this` binding, which lets it live in a separate file.
 
-**Property name convention**: every resource-specific field is prefixed with the resource name (`chatModel`, `embeddingsModel`, `rerankModel`, `speechModel`, `ocrDocumentType`, etc.) to avoid collisions when they all live in the same properties array. Only the top-level `resource` dropdown uses a bare name.
+`shared.ts` exports `bergetRequest()`, `loadModelOptions()`, the `BERGET_API_BASE_URL` constant, and `formatBergetError()` — a tolerant error formatter that handles all the response shapes Berget's various endpoints return (their actual response body shape varies between endpoints; see the function's doc comment for the four shapes).
+
+**Property name convention**: every resource-specific field is prefixed with the resource name (`chatModel`, `imageModel`, `rerankModel`, `speechModel`, `ocrDocumentType`, etc.) to avoid collisions when they all live in the same properties array. Only the top-level `resource` dropdown uses a bare name.
 
 **Internal node type names** (what n8n uses to identify nodes in workflow JSON — **do not change these without a major version bump**):
 
 - `bergetAi` — the multi-resource action node
 - `bergetAiChatModel` — the LangChain Chat Model sub-node
 - `bergetAiEmbeddingsModel` — the LangChain Embeddings Model sub-node
+- `bergetAiReranker` — the LangChain Reranker sub-node
 - The credential type is `bergetAiApi`
 
 ## Architecture of the sub-node
@@ -117,8 +127,8 @@ The build script has three steps:
 
 1. `npm whoami` → `mickekring`.
 2. Bump `version` in `package.json` (semver: patch for fixes, minor for new resources/parameters, major for renaming the node type, deleting a resource, or breaking the sub-node's LangChain interface).
-3. `npm run build` — confirm clean exit, SVGs copied for both nodes.
-4. `npm pack --dry-run` — sanity-check tarball contents. Should contain `dist/nodes/BergetAi/` (including all resource modules) and `dist/nodes/BergetAiChatModel/`.
+3. `npm run build` — confirm clean exit, SVGs copied for all four nodes.
+4. `npm pack --dry-run` — sanity-check tarball contents. Should contain `dist/nodes/BergetAi/` (with all five resource modules: chat, image, ocr, rerank, speech), `dist/nodes/BergetAiChatModel/`, `dist/nodes/BergetAiEmbeddingsModel/`, and `dist/nodes/BergetAiReranker/`.
 5. Update `CHANGELOG.md` with the release notes.
 6. Commit + push.
 7. `npm publish` — prompts for 2FA.
@@ -141,7 +151,7 @@ The build script has three steps:
 - **When editing a resource's properties**: remember every field must have `displayOptions.show.resource: ['<resource-name>']` or it will show for every resource.
 - **When bumping the n8n-workflow dev dep**: peer dep stays wildcard. Only the devDep version controls what types we compile against.
 - **When changing the Chat Model sub-node**: remember it supplies a LangChain object, not an execution result. Any change must preserve the `supplyData` contract and return a `ChatOpenAI` (or compatible) instance pointed at Berget's API.
-- **Before publishing**: always `npm run build` and `npm pack --dry-run` to verify the tarball contains `dist/nodes/BergetAi/BergetAi.node.js` + the 5 resource modules + both SVGs + `dist/nodes/BergetAiChatModel/BergetAiChatModel.node.js`.
+- **Before publishing**: always `npm run build` and `npm pack --dry-run` to verify the tarball contains `dist/nodes/BergetAi/BergetAi.node.js` + the 5 resource modules + 4 SVGs + the three sub-node `.node.js` files (ChatModel, EmbeddingsModel, Reranker).
 - **Don't edit `dist/`** — it's generated and gitignored.
 - **Don't reintroduce workspaces** — the whole point of this layout is a single package.
 - **Don't suggest pulling from or rebasing against any external upstream.** This repo is standalone; Micke maintains it independently. If a change is needed, make it here.
@@ -151,6 +161,33 @@ The build script has three steps:
 - **Reasoning content is not surfaced.** `@langchain/openai@1.4.x` does not extract non-standard response fields like `reasoning_content` / `reasoning` / `reasoning_details`. The `reasoning_effort` parameter IS sent to the model (so answer quality improves), but the chain-of-thought tokens are dropped before reaching the Agent. Fixing this requires either upstream LangChain support or writing a custom `ChatModel` class in this package.
 - **"Add to workflow" extra step for community sub-nodes.** When adding the `Berget AI Chat Model` sub-node to an AI Agent's Chat Model socket, n8n shows a confirmation panel rather than dropping the node directly. This is n8n's client-side UX for community nodes (note the package icon in the palette) and cannot be changed from the node side. Only fixable by the package becoming a verified n8n community node.
 - **Streaming**: the Chat Model sub-node sets `streaming: true` on its `ChatOpenAI` instance. A test run on one self-hosted n8n instance failed to show streaming output, but the same instance also failed to stream with n8n's built-in OpenAI Chat Model — pointing at an n8n server-side configuration issue on that deployment rather than a bug in this package. Not confirmed on a known-good streaming n8n instance yet.
+
+## Berget API quirks worth knowing about
+
+Berget's runtime API does **not match** what their OpenAPI spec at `https://api.berget.ai/openapi.json` declares. This pattern has bitten us four times so far. **When adding code that talks to a new Berget endpoint, always verify the actual response shape with `curl` first; don't trust the spec alone.**
+
+The four discrepancies the package currently works around:
+
+1. **`/v1/ocr` sync** — spec says HTTP 200 with content. Runtime always returns HTTP 500 `OCR_SERVICE_ERROR`. Workaround: OCR resource hidden from UI (0.4.4); async path lives in code but is unreachable. Could not find OCR mentioned on Berget's product pages anymore as of 2026-04, so this may be retired upstream.
+2. **`/v1/embeddings` `dimensions` parameter** — spec documents it. Runtime returns HTTP 503 `EMBEDDING_CREATION_ERROR` whenever the field is present, at any value. Workaround: `Dimensions` field defaults to 0, only sent when > 0 (0.4.8).
+3. **`/v1/rerank` response shape** — spec says `{ data: [...], object, model, usage }`. Runtime says `{ results: [...], id, model, usage }`. Workaround: `extractSegments`-style tolerant reader at the source, accepts both `payload.results ?? payload.data` (0.4.10).
+4. **`/v1/audio/transcriptions` with `diarize=true`** — spec implies a flat `{ segments: [...], ... }`. Runtime nests as `{ segments: { segments: [...] }, ... }`. Workaround: `extractSegments()` helper in `speech.ts` checks both shapes (0.4.14).
+
+When Berget eventually fixes any of these to match the spec, the code keeps working because the readers are tolerant by design. Don't "clean up" the tolerance to a single shape — leave it permissive.
+
+## Speech-to-text post-processing
+
+The Speech resource does one piece of post-processing the others don't. When `Diarize` is enabled, after parsing the verbose_json response `executeSpeech` builds a `speaker_transcript` field — a single human-readable string formatted as:
+
+```text
+SPEAKER_00:
+Concatenated lines from the first speaker.
+
+SPEAKER_01:
+Reply from the second speaker.
+```
+
+Built by `buildSpeakerTranscript()` from `nodes/BergetAi/speech.ts`. This is purely additive — original `segments`, `text`, `language` fields are preserved on the response object so workflows that use the raw structure continue working. Almost everyone who turns on diarization wants the friendly format, so we add it transparently rather than making them post-process per-word speaker labels themselves. Auto-promotion to `verbose_json` response format also happens silently when `diarize` or `align` is on (0.4.12).
 
 ## Security posture
 
