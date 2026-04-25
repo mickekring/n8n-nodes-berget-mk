@@ -2,6 +2,22 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.14] - 2026-04-25
+
+### Fixed
+
+- **`speaker_transcript` field on diarized speech output now actually appears.** The `0.4.13` post-processor expected `data.segments` to be a flat array (matching what Berget's OpenAPI spec implies) and silently bailed when it wasn't. In practice, Berget's verbose_json + diarize response wraps the array one level deeper:
+
+  ```json
+  { "segments": { "segments": [...] }, "language": "sv", "text": "..." }
+  ```
+
+  Yet another spec-vs-runtime discrepancy. Added a tolerant `extractSegments` helper that pulls the array out of either shape — so `speaker_transcript` gets built whether Berget returns the flat OpenAPI-spec shape, the nested runtime shape, or any future variant where the array is found at one of those two locations. Verified against the actual JSON Micke pasted from a real workflow.
+
+### Upstream issue note (informational)
+
+This brings the running tally of Berget OpenAPI-spec vs. runtime discrepancies to **four**, joining the OCR sync 500s, embeddings dimensions 503s, and rerank `results`-vs-`data` mismatch already documented in `docs/berget-api-discrepancies.md`. The pattern of "trust runtime, treat the spec as a hint" continues to hold. When this `speaker_transcript` fix becomes redundant (because Berget's spec catches up to their runtime, or vice versa) the tolerant extractor will quietly keep working — no further code change needed.
+
 ## [0.4.13] - 2026-04-25
 
 ### Added

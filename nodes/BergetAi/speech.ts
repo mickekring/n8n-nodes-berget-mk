@@ -231,20 +231,43 @@ export async function executeSpeech(
 	// segments and word timestamps. The raw segments/words/timestamps are
 	// still preserved on the result object so power users can drill into
 	// them when needed.
-	if (
-		options.diarize &&
-		data &&
-		typeof data === 'object' &&
-		Array.isArray((data as IDataObject).segments)
-	) {
-		const segments = (data as IDataObject).segments as TranscriptionSegment[];
-		const transcript = buildSpeakerTranscript(segments);
-		if (transcript) {
-			(data as IDataObject).speaker_transcript = transcript;
+	if (options.diarize && data && typeof data === 'object') {
+		const segments = extractSegments(data as IDataObject);
+		if (segments) {
+			const transcript = buildSpeakerTranscript(segments);
+			if (transcript) {
+				(data as IDataObject).speaker_transcript = transcript;
+			}
 		}
 	}
 
 	return data as IDataObject;
+}
+
+/**
+ * Pull the segments array out of Berget's transcription response. Berget has
+ * been observed to return the segments in two different shapes:
+ *
+ *   Shape A (flat):   { segments: [...], language, text }
+ *   Shape B (nested): { segments: { segments: [...], ... }, language, text }
+ *
+ * Shape B is what the API returns for verbose_json with diarize=true (as of
+ * 2026-04). We check both so the speaker_transcript builder works regardless
+ * of which shape we get, and so future API changes that flatten or re-nest
+ * don't silently break the output.
+ */
+function extractSegments(data: IDataObject): TranscriptionSegment[] | undefined {
+	const top = data.segments;
+	if (Array.isArray(top)) {
+		return top as TranscriptionSegment[];
+	}
+	if (top && typeof top === 'object') {
+		const inner = (top as IDataObject).segments;
+		if (Array.isArray(inner)) {
+			return inner as TranscriptionSegment[];
+		}
+	}
+	return undefined;
 }
 
 interface TranscriptionWord {
