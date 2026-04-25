@@ -2,3 +2,13 @@
 node_modules
 dist
 .env
+
+# Local test assets — never commit recordings, sample documents, etc.
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.ogg
+*.mp4
+*.mov
+test_*
