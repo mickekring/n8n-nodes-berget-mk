@@ -49,7 +49,7 @@ export const speechProperties: INodeProperties[] = [
 				name: 'language',
 				type: 'string',
 				default: 'sv',
-				description: 'Language code, e.g. "sv" for Swedish',
+				description: 'Language code, e.g. "sv" for Swedish, "no" for Norwegian, "en" for English',
 			},
 			{
 				displayName: 'Response Format',
@@ -58,11 +58,61 @@ export const speechProperties: INodeProperties[] = [
 				options: [
 					{ name: 'JSON', value: 'json' },
 					{ name: 'Text', value: 'text' },
-					{ name: 'SRT', value: 'srt' },
-					{ name: 'VTT', value: 'vtt' },
+					{ name: 'SRT (subtitles)', value: 'srt' },
+					{ name: 'VTT (subtitles)', value: 'vtt' },
+					{
+						name: 'Verbose JSON (segments + speakers)',
+						value: 'verbose_json',
+					},
 				],
 				default: 'json',
-				description: 'Format for the transcription output',
+				description:
+					'Format for the transcription output. Use "Verbose JSON" to get segment-level data including speaker labels (when Diarize is on) and word-level timestamps (when Word-Level Alignment is on). Plain JSON returns only the full transcribed text.',
+			},
+			{
+				displayName: 'Diarize (Speaker Identification)',
+				name: 'diarize',
+				type: 'boolean',
+				default: false,
+				description:
+					'Whether to identify which speaker said what. Adds speaker labels (SPEAKER_00, SPEAKER_01, ...) to each segment. Works best with 2-4 distinct speakers; overlapping speech is a known limitation. ⚠️ Requires Response Format = "Verbose JSON" to actually see the speaker labels in the output — plain JSON drops them.',
+			},
+			{
+				displayName: 'Word-Level Alignment',
+				name: 'align',
+				type: 'boolean',
+				default: false,
+				description:
+					'Whether to add precise per-word timestamps to the transcript. Useful for subtitle generation and word-accurate seeking. Like Diarize, requires Response Format = "Verbose JSON" to actually see the word timestamps.',
+			},
+			{
+				displayName: 'Prompt',
+				name: 'prompt',
+				type: 'string',
+				typeOptions: { rows: 2 },
+				default: '',
+				description:
+					"Optional text to guide the model's transcription style or to seed it with vocabulary, names, or context that improves accuracy on domain-specific audio.",
+			},
+			{
+				displayName: 'Hotwords',
+				name: 'hotwords',
+				type: 'string',
+				default: '',
+				description:
+					'Comma-separated list of words to boost during transcription. Useful for proper nouns, technical terms, or names the model otherwise mis-hears. Example: "Berget, Stockholm, KB-Whisper, Mistral".',
+			},
+			{
+				displayName: 'Timestamp Granularities',
+				name: 'timestamp_granularities',
+				type: 'multiOptions',
+				options: [
+					{ name: 'Word', value: 'word' },
+					{ name: 'Segment', value: 'segment' },
+				],
+				default: [],
+				description:
+					'Granularities of timestamps to include in the response. Both can be selected. Only effective with Response Format = "Verbose JSON".',
 			},
 			{
 				displayName: 'Temperature',
@@ -70,7 +120,7 @@ export const speechProperties: INodeProperties[] = [
 				type: 'number',
 				typeOptions: { minValue: 0, maxValue: 1, numberPrecision: 2 },
 				default: 0,
-				description: 'Sampling temperature between 0 and 1',
+				description: 'Sampling temperature between 0 and 1. Lower is more deterministic.',
 			},
 		],
 		...showForSpeech,
@@ -87,7 +137,16 @@ export async function executeSpeech(
 		'speechBinaryProperty',
 		itemIndex,
 	) as string;
-	const options = context.getNodeParameter('speechOptions', itemIndex, {}) as IDataObject;
+	const options = context.getNodeParameter('speechOptions', itemIndex, {}) as {
+		language?: string;
+		response_format?: string;
+		diarize?: boolean;
+		align?: boolean;
+		prompt?: string;
+		hotwords?: string;
+		timestamp_granularities?: string[];
+		temperature?: number;
+	};
 
 	const binaryData = context.helpers.assertBinaryData(itemIndex, binaryPropertyName);
 	const fileBuffer = await context.helpers.getBinaryDataBuffer(itemIndex, binaryPropertyName);
@@ -98,9 +157,21 @@ export async function executeSpeech(
 		filename: binaryData.fileName ?? 'audio',
 		contentType: binaryData.mimeType ?? 'application/octet-stream',
 	});
-	if (options.language) formData.append('language', options.language as string);
-	if (options.response_format) {
-		formData.append('response_format', options.response_format as string);
+	if (options.language) formData.append('language', options.language);
+	if (options.response_format) formData.append('response_format', options.response_format);
+	if (options.diarize) formData.append('diarize', 'true');
+	if (options.align) formData.append('align', 'true');
+	if (options.prompt) formData.append('prompt', options.prompt);
+	if (options.hotwords) formData.append('hotwords', options.hotwords);
+	if (options.timestamp_granularities && options.timestamp_granularities.length > 0) {
+		// timestamp_granularities is an array. The OpenAI-compatible Whisper
+		// convention is to send each value as a separate form field with the
+		// same name, e.g. timestamp_granularities[]=word&timestamp_granularities[]=segment.
+		// form-data's append handles this when called multiple times with the
+		// same key, but we use the [] suffix explicitly for clarity.
+		for (const g of options.timestamp_granularities) {
+			formData.append('timestamp_granularities[]', g);
+		}
 	}
 	if (options.temperature !== undefined) {
 		formData.append('temperature', String(options.temperature));

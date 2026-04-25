@@ -2,6 +2,28 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.4.11] - 2026-04-16
+
+### Added
+
+Speech to Text resource gains the full set of features Berget's `/v1/audio/transcriptions` endpoint actually supports — previously only Language, Response Format, and Temperature were exposed. Now also:
+
+- **Diarize (Speaker Identification)** — boolean. Adds `SPEAKER_00`, `SPEAKER_01`, etc. labels to each segment of the transcription. Works best with 2–4 distinct speakers; overlapping speech is a known limitation. The new feature was announced by Berget in their April 2026 multilingual speech-to-text post; this option exposes their `diarize=true` form parameter directly.
+- **Word-Level Alignment** — boolean. Maps to Berget's `align=true`. Adds precise per-word timestamps to the segment data. Useful for subtitle generation and word-accurate seeking.
+- **Verbose JSON response format** — new option in the Response Format dropdown. Required by both Diarize and Word-Level Alignment to actually surface speaker labels and per-word timestamps in the output. Plain JSON drops them. The new option appears as **"Verbose JSON (segments + speakers)"** with a description warning that diarize/align won't be visible without it.
+- **Prompt** — string. Maps to Berget's `prompt` parameter. Optional text to guide the model's transcription style or seed it with vocabulary, names, or context.
+- **Hotwords** — string. Maps to Berget's `hotwords` parameter. Comma-separated list of words to boost during transcription. Useful for proper nouns, technical terms, and domain-specific vocabulary that the model might otherwise mis-hear.
+- **Timestamp Granularities** — multi-options. Maps to Berget's `timestamp_granularities[]` array parameter. Choose `Word`, `Segment`, or both. Only effective with Verbose JSON.
+
+### Improvements
+
+- Language description updated to mention Norwegian (`no`) and English (`en`) alongside Swedish (`sv`), reflecting Berget's expanded model lineup (`KBLab/kb-whisper-large` for Swedish, `NbAiLab/nb-whisper-large` for Norwegian, `openai/whisper-large-v3` for multilingual).
+- Response format options now distinguish `SRT (subtitles)` and `VTT (subtitles)` from plain JSON/Text, making the dropdown easier to scan.
+
+### Not exposed (deliberately)
+
+The transcription endpoint also accepts `speaker_embeddings`, `chunk_size`, `batch_size`, and a few deprecated parameters (`enable_word_alignment`, `enable_speaker_diarization`, `compute_type`). These are infrastructure-tuning fields with sensible auto-detected defaults and aren't useful for typical n8n workflows. Adding them would clutter the Options collection without practical benefit. If a real workflow needs them, file an issue.
+
 ## [0.4.10] - 2026-04-11
 
 ### Fixed
