@@ -2,6 +2,28 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.5.1] - 2026-08-02
+
+Security maintenance release. Clears all 30 open Dependabot alerts. **No source files changed** — this is a dependency bump and a version number, nothing else. Node behavior, parameters, and the sub-node `supplyData` contracts are byte-for-byte identical to `0.5.0`.
+
+### Changed — dependency floors
+
+- **`axios` `^1.15.0` → `^1.19.0`** (28 alerts). The count was inflated by a single stalled version accumulating every advisory published against the `1.x` line since April: prototype-pollution read-side gadgets (response tampering, credential theft, header injection, MITM), `Proxy-Authorization` leakage across redirects and to origin servers, several `NO_PROXY` / `no_proxy` bypasses including the IPv4-mapped IPv6 case, `maxBodyLength` / `maxContentLength` bypasses on streamed and HTTP/2 uploads, and assorted ReDoS / unbounded-recursion DoS in `toFormData` and `formDataToJSON`. All 28 resolve at `1.18.0`; we went to `1.19.0`, the current release.
+- **`form-data` `^4.0.5` → `^4.0.6`** (1 alert). GHSA for CRLF injection via unescaped multipart field names. This one is the most directly relevant of the batch — [nodes/BergetAi/speech.ts](nodes/BergetAi/speech.ts) is the package's only multipart producer, building the `multipart/form-data` body for `/v1/audio/transcriptions`. Field names there are hardcoded string literals, not user input, so the vulnerable path was not reachable from a workflow; patched regardless.
+- **`langsmith` `0.5.20` → `0.8.9`** (1 alert, dev-only). Transitive through `@langchain/core`, which declares `langsmith >=0.5.0 <1.0.0` — lifted by lockfile refresh, no manifest change. The advisory covers unsafe deserialization of untrusted manifests on public prompt pull, an API this package never calls.
+
+### Not changed, deliberately
+
+`npm audit` still reports four high-severity entries after this release. All four are inside the `n8n-workflow` **devDependency** tree — `lodash@4.17.23` (direct and via `@n8n/expression-runtime@0.8.0`), plus a nested `form-data@4.0.4` that `n8n-workflow` pins independently of ours. Our own `form-data` is `4.0.6` at top level and deduped under `axios`; the `4.0.4` copy is a sibling in the dev tree and is never loaded by our code.
+
+This is the noise class documented in the security posture section of [CLAUDE.md](CLAUDE.md) — upstream's tree to fix, not ours, and it does not reach shipped code. The rule stands: act on alerts naming a **direct runtime** dependency (`axios`, `form-data`) or our own source files; ignore the rest until n8n bumps their tree.
+
+### Note on actual end-user exposure
+
+As with the `uuid` override in `0.5.0`, the practical impact of these alerts on installed users was smaller than the number suggested. All 30 were filed against `package-lock.json`, which is not part of the published tarball (the `files` list is `["dist"]`, so npm ships `dist/` plus `LICENSE`, `README.md`, and `package.json`). Anyone installing `n8n-nodes-berget-mk` resolves `axios` and `form-data` fresh against the declared ranges, and the old `^1.15.0` caret already permitted a patched `1.x`.
+
+Raising the declared floors to `^1.19.0` / `^4.0.6` closes the remaining gap: a downstream project carrying its own older lockfile could previously resolve a vulnerable version and still satisfy our manifest. It no longer can.
+
 ## [0.5.0] - 2026-04-25
 
 Milestone release marking the completion of the post-0.4.x code audit and the closing of two parity gaps that had been outstanding for several minor versions. Functionally identical to `0.4.18` — the jump from `0.4.x` to `0.5.x` is symbolic, signalling that the audit work is done and the package is ready for broader use beyond the maintainer's own workflows.
