@@ -12,11 +12,19 @@ Security maintenance release. Clears all 30 open Dependabot alerts. **No source 
 - **`form-data` `^4.0.5` → `^4.0.6`** (1 alert). GHSA for CRLF injection via unescaped multipart field names. This one is the most directly relevant of the batch — [nodes/BergetAi/speech.ts](nodes/BergetAi/speech.ts) is the package's only multipart producer, building the `multipart/form-data` body for `/v1/audio/transcriptions`. Field names there are hardcoded string literals, not user input, so the vulnerable path was not reachable from a workflow; patched regardless.
 - **`langsmith` `0.5.20` → `0.8.9`** (1 alert, dev-only). Transitive through `@langchain/core`, which declares `langsmith >=0.5.0 <1.0.0` — lifted by lockfile refresh, no manifest change. The advisory covers unsafe deserialization of untrusted manifests on public prompt pull, an API this package never calls.
 
+### Internal — `form-data` override
+
+Added `form-data: ^4.0.6` to the existing `overrides` block, alongside the `uuid: ^14.0.0` entry introduced in `0.5.0`, for the same reason and with the same reasoning.
+
+Bumping our own `form-data` floor left one alert open. `n8n-workflow@2.16.0` pins its own nested `form-data@4.0.4` independently of ours, so a vulnerable copy survived in the dev tree — GitHub reclassified the alert from `runtime` to `development` scope once our direct copy was patched, correctly identifying it as the n8n-owned one. The override collapses all three resolution paths (`axios` → deduped, top-level direct, `n8n-workflow` → deduped) onto `4.0.6`.
+
+As with `uuid`, this has no effect on end users: `form-data` reaches them through their own n8n install's tree, and `package-lock.json` is not published. It exists to keep the maintainer's dev tree and the alert dashboard clean. When `n8n-workflow` bumps past `4.0.6` upstream, the override becomes a no-op and can be dropped.
+
 ### Not changed, deliberately
 
-`npm audit` still reports four high-severity entries after this release. All four are inside the `n8n-workflow` **devDependency** tree — `lodash@4.17.23` (direct and via `@n8n/expression-runtime@0.8.0`), plus a nested `form-data@4.0.4` that `n8n-workflow` pins independently of ours. Our own `form-data` is `4.0.6` at top level and deduped under `axios`; the `4.0.4` copy is a sibling in the dev tree and is never loaded by our code.
+`npm audit` still reports three high-severity entries, all one advisory: `lodash@4.17.23` reached through `@n8n/expression-runtime@0.8.0` and `n8n-workflow@2.16.0`, both **devDependencies**. This is the noise class documented in the security posture section of [CLAUDE.md](CLAUDE.md) — upstream's tree, not ours, and it does not reach shipped code, which is `axios` and `form-data` only.
 
-This is the noise class documented in the security posture section of [CLAUDE.md](CLAUDE.md) — upstream's tree to fix, not ours, and it does not reach shipped code. The rule stands: act on alerts naming a **direct runtime** dependency (`axios`, `form-data`) or our own source files; ignore the rest until n8n bumps their tree.
+Worth noting for whoever revisits this: `lodash@4.18.1` now exists and does patch the `_.template` code-injection advisory, so an override would silence these three as well. Left alone here because `n8n-workflow` is compiled against for types only and the standing rule is to let n8n fix their own tree. Revisit if it ever stops being dev-only.
 
 ### Note on actual end-user exposure
 
