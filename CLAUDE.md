@@ -104,7 +104,14 @@ The `ChatOpenAI` instance is configured with:
 - Standard params (`temperature`, `topP`, `maxTokens`, `frequencyPenalty`, `presencePenalty`, `timeout`)
 - `modelKwargs.reasoning_effort` for reasoning-capable models (sent to the API as a raw kwarg)
 
-**LangChain dependency strategy**: `@langchain/openai` and `@langchain/core` are declared as **peer dependencies** (wildcard) — not bundled. This is critical: if we bundled our own copy, our `ChatOpenAI` instances would be a different JavaScript class than n8n's built-in ones, and `instanceof` checks inside the Agent would fail. n8n ships its own LangChain, and we deliberately use that same instance.
+**Dependency strategy (corrected in `0.5.3` — read this before touching `package.json`)**: the split between peer and runtime dependency is not a style choice here, and getting it backwards breaks every install. The rule is *who supplies the module at runtime*.
+
+- **`n8n-workflow` — supplied by n8n.** Declared as a peer AND marked `optional` in `peerDependenciesMeta`. The `optional` flag is the load-bearing part: npm 7+ auto-installs non-optional peers, and because `n8n-workflow`'s npm `latest` dist-tag has been frozen at `2.16.0` since 2026-04-07 (real releases ship under `stable`), a bare `"*"` peer injects a stale `2.16.0` into `~/.n8n/nodes/node_modules/` that shadows whatever the host actually runs. As the host advances (n8n `2.33.3` → `n8n-workflow@2.33.0`) the two stop being interchangeable — `NodeOperationError` becomes a different class object and `instanceof` fails. n8n hit the identical bug in their own `ai-utilities` (n8n-io/n8n#26404). Never make `n8n-workflow` a real dependency, and never drop the `optional` flag.
+- **`@langchain/core` and `@langchain/openai` — NOT supplied by n8n.** These are **real runtime `dependencies`**. n8n loads community nodes out of `~/.n8n/nodes/node_modules/`, and Node resolves a module's `require()` calls upward from that module's own directory; the search never reaches n8n's own install, which on a pnpm-based n8n image sits in an isolated `.pnpm/` store. Declaring them as peers produces `Cannot find module '@langchain/openai'` at load time. `n8n-nodes-mcp` ships `@langchain/core` the same way.
+
+Earlier revisions of this file claimed LangChain had to be a peer so our `ChatOpenAI` would be the same class as n8n's and survive `instanceof` in the Agent. That was wrong on both counts: n8n does not hand LangChain to community nodes, and every release before `0.5.2` in fact shipped a private copy anyway (npm auto-installed the `"*"` peers) while the Agent worked fine for months. Treat the `instanceof` concern as real for `n8n-workflow` and moot for LangChain.
+
+**No `main` field.** Removed in `0.5.3`; it pointed at an `index.js` that never existed. The official `n8n-nodes-starter` declares none either — n8n loads via the `n8n` field paths.
 
 ## Build and test commands
 

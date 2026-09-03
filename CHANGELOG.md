@@ -2,6 +2,36 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.5.3] - 2026-09-03
+
+**Completes the fix started in `0.5.2`, which was half right and broke installs a different way.** `0.5.2` marked all three peers optional; that correctly stopped the harmful `n8n-workflow` duplicate, but LangChain is *not* supplied by n8n, so installs then failed at load time with:
+
+```text
+Error loading package "n8n-nodes-berget-mk": Cannot find module '@langchain/openai'
+Require stack:
+- /home/node/.n8n/nodes/node_modules/n8n-nodes-berget-mk/dist/nodes/BergetAiChatModel/BergetAiChatModel.node.js
+- .../n8n-core/dist/nodes-loader/load-class-in-isolation.js
+```
+
+### The actual rule
+
+The two kinds of dependency are not interchangeable, and this package had both wrong in opposite directions:
+
+- **`n8n-workflow` — supplied by the host.** Must stay a peer, and must be `optional` so npm never injects its own copy. n8n confirms this: a non-peer `n8n-workflow` lets npm/pnpm "install a separate nested copy… two instances at runtime… causing type mismatches and `instanceof` failures" ([n8n-io/n8n#26404](https://github.com/n8n-io/n8n/pull/26404)). That nested copy is what `0.5.2` correctly removed.
+- **`@langchain/core` + `@langchain/openai` — NOT supplied by the host.** n8n loads community nodes from `~/.n8n/nodes/node_modules/`, and Node resolves a module's own `require()` calls upward from its own directory. That search never reaches n8n's install, which under a pnpm-based n8n image lives in an isolated `.pnpm/` store. So these must be **real runtime dependencies**. `n8n-nodes-mcp` ships `@langchain/core` the same way.
+
+### Changed
+
+- **`@langchain/core` and `@langchain/openai` moved from `peerDependencies` to `dependencies`** (`^1.1.39` / `^1.4.3`) and dropped from `devDependencies`, where they were now redundant.
+- **`peerDependencies` reduced to `n8n-workflow` alone**, retaining `peerDependenciesMeta.optional` from `0.5.2`.
+- **Removed the `main` field.** It read `"index.js"`, and no such file has ever existed in the repo or the tarball. The official `n8n-nodes-starter` declares no `main` either; n8n loads via the `n8n` field paths, which is why this never surfaced.
+
+Clean install of the built tarball now yields 41 packages: `@langchain/core`, `@langchain/openai`, `axios`, `form-data` and their transitive deps — with `n8n-workflow`, `@n8n/expression-runtime` and `isolated-vm` all correctly absent, and 0 audit vulnerabilities. Verified that every module the compiled nodes require (`@langchain/openai`, both `@langchain/core` subpaths, `axios`, `form-data`) resolves from the node file's own directory, and that all four nodes load with correct outputs once n8n supplies `n8n-workflow`.
+
+### Note on the duplicate-LangChain concern
+
+Earlier notes in this changelog and in CLAUDE.md warned that shipping our own LangChain would make our `ChatOpenAI` a different class from n8n's and break `instanceof` inside the Agent. In practice that risk does not materialise, and there is no alternative: every release before `0.5.2` already shipped a private LangChain copy — npm auto-installed the `"*"` peers — and the Agent worked for months on exactly that arrangement. The concern is real for `n8n-workflow`, which n8n *does* hand to community nodes; it is moot for LangChain, which it does not.
+
 ## [0.5.2] - 2026-09-03
 
 **Fixes community-node installs failing on current n8n.** Symptom: the Community nodes page shows a warning triangle next to `n8n-nodes-berget-mk` with the tooltip *"There is a problem with this package, try uninstalling it then reinstalling to resolve this issue"*, and the four Berget nodes stop working. Reinstalling does not help. Reported across multiple independent n8n instances on n8n `2.33.3`.
