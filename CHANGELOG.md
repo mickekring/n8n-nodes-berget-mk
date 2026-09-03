@@ -2,6 +2,65 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.5.2] - 2026-09-03
+
+**Fixes community-node installs failing on current n8n.** Symptom: the Community nodes page shows a warning triangle next to `n8n-nodes-berget-mk` with the tooltip *"There is a problem with this package, try uninstalling it then reinstalling to resolve this issue"*, and the four Berget nodes stop working. Reinstalling does not help. Reported across multiple independent n8n instances on n8n `2.33.3`.
+
+No source file changed. The bug was in `package.json` and had been latent since the package was first published.
+
+### Root cause — `peerDependencies: "*"` were being auto-installed
+
+The three LangChain / n8n peers were declared as bare wildcards:
+
+```json
+"peerDependencies": {
+  "@langchain/core": "*",
+  "@langchain/openai": "*",
+  "n8n-workflow": "*"
+}
+```
+
+npm 7+ **auto-installs** peer dependencies unless they are marked optional. The intent documented in [CLAUDE.md](CLAUDE.md) was the opposite — inherit these from the host n8n so our `ChatOpenAI` is the *same JavaScript class* n8n's Agent does `instanceof` against. Instead, every `npm install` of this package into `~/.n8n/nodes/` pulled down a full private copy of the stack: **110 packages**, including a second `n8n-workflow`, a second `@langchain/core` + `@langchain/openai`, and `isolated-vm` (a native C++ addon reached via `@n8n/expression-runtime`, which `n8n-workflow` began depending on at `2.12.0`).
+
+### Why it worked for months and then stopped
+
+`n8n-workflow`'s npm dist-tags are unusual — the project publishes real releases under `stable`, and its `latest` tag has been **frozen at `2.16.0` since 2026-04-07**:
+
+```text
+latest: 2.16.0     <- what "*" resolves to
+stable: 2.37.2     <- what n8n actually ships
+beta:   2.38.1
+```
+
+A range of `*` resolves to `latest`, so our auto-installed copy is pinned to `2.16.0` forever. The n8n app and `n8n-workflow` move in lockstep (`n8n@2.33.3` → `n8n-workflow@2.33.0`), so:
+
+- **April 2026** — n8n was on ~`2.16`. The injected duplicate matched the host almost exactly, so nothing broke and the nodes worked normally.
+- **May – September 2026** — n8n advanced to `2.33.x` while our injected copy stayed at `2.16.0`. The gap widened until the duplicate stopped being interchangeable with the host's.
+
+`NodeConnectionTypes` values are identical across `2.16.0` and `2.33.0`, so connection wiring was not the failure. `NodeOperationError`, however, is a *different class object* between the two copies — `instanceof` across them returns `false` (both still extend `ApplicationError`). The same duplication hits `@langchain/core`, which is precisely the `instanceof` hazard CLAUDE.md warned about for the Chat Model sub-node.
+
+This is why the failure appeared simultaneously on unrelated instances without any release from us, and why uninstall/reinstall never fixed it — a reinstall re-resolves `*` to the same stale `2.16.0`.
+
+### Changed
+
+- **Added `peerDependenciesMeta` marking all three peers `optional: true`.** npm no longer auto-installs them; they resolve from the host n8n, as always intended. The `peerDependencies` block itself is unchanged, so the requirement is still declared for tooling.
+
+Measured effect on a clean install of the built tarball:
+
+| | 0.5.0 | 0.5.2 |
+|---|---|---|
+| packages installed | 110 | **28** |
+| duplicate `n8n-workflow` | yes (`2.16.0`) | **no** |
+| duplicate `@langchain/core` + `openai` | yes | **no** |
+| `isolated-vm` native build | yes | **no** |
+| `npm audit` on the install | 5 vulns | **0** |
+
+Remaining 28 are `axios`, `form-data`, and their transitive deps — exactly what this package should ship. Verified afterwards that all four nodes load against a host-provided `n8n-workflow@2.33.0` and resolve to a **single** copy of it, with correct outputs (`main`, `ai_languageModel`, `ai_embedding`, `ai_reranker`).
+
+### Known issue, not fixed here
+
+`main` is `"index.js"`, and no `index.js` exists in the repo or the tarball (`files` is `["dist"]`). Nothing in n8n's loader requires it — the `n8n` field paths are what get loaded, which is why this never surfaced — but `require("n8n-nodes-berget-mk")` would throw. Left alone in this release to keep the fix minimal and verifiable; worth cleaning up separately.
+
 ## [0.5.1] - 2026-08-02
 
 Security maintenance release. Clears all 30 open Dependabot alerts. **No source files changed** — this is a dependency bump and a version number, nothing else. Node behavior, parameters, and the sub-node `supplyData` contracts are byte-for-byte identical to `0.5.0`.
