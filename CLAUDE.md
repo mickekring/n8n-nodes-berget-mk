@@ -104,12 +104,20 @@ The `ChatOpenAI` instance is configured with:
 - Standard params (`temperature`, `topP`, `maxTokens`, `frequencyPenalty`, `presencePenalty`, `timeout`)
 - `modelKwargs.reasoning_effort` for reasoning-capable models (sent to the API as a raw kwarg)
 
-**Dependency strategy (corrected in `0.5.3` — read this before touching `package.json`)**: the split between peer and runtime dependency is not a style choice here, and getting it backwards breaks every install. The rule is *who supplies the module at runtime*.
+**Dependency strategy (root cause established 2026-09-03 — read this before touching `package.json`)**: the peer-vs-runtime split decides whether the package loads at all, and the rule is *what n8n actually exposes to community nodes* — which is narrower than it looks.
 
-- **`n8n-workflow` — supplied by n8n.** Declared as a peer AND marked `optional` in `peerDependenciesMeta`. The `optional` flag is the load-bearing part: npm 7+ auto-installs non-optional peers, and because `n8n-workflow`'s npm `latest` dist-tag has been frozen at `2.16.0` since 2026-04-07 (real releases ship under `stable`), a bare `"*"` peer injects a stale `2.16.0` into `~/.n8n/nodes/node_modules/` that shadows whatever the host actually runs. As the host advances (n8n `2.33.3` → `n8n-workflow@2.33.0`) the two stop being interchangeable — `NodeOperationError` becomes a different class object and `instanceof` fails. n8n hit the identical bug in their own `ai-utilities` (n8n-io/n8n#26404). Never make `n8n-workflow` a real dependency, and never drop the `optional` flag.
-- **`@langchain/core` and `@langchain/openai` — NOT supplied by n8n.** These are **real runtime `dependencies`**. n8n loads community nodes out of `~/.n8n/nodes/node_modules/`, and Node resolves a module's `require()` calls upward from that module's own directory; the search never reaches n8n's own install, which on a pnpm-based n8n image sits in an isolated `.pnpm/` store. Declaring them as peers produces `Cannot find module '@langchain/openai'` at load time. `n8n-nodes-mcp` ships `@langchain/core` the same way.
+How n8n installs and exposes modules:
 
-Earlier revisions of this file claimed LangChain had to be a peer so our `ChatOpenAI` would be the same class as n8n's and survive `instanceof` in the Agent. That was wrong on both counts: n8n does not hand LangChain to community nodes, and every release before `0.5.2` in fact shipped a private copy anyway (npm auto-installed the `"*"` peers) while the Agent worked fine for months. Treat the `instanceof` concern as real for `n8n-workflow` and moot for LangChain.
+- **n8n never installs peer dependencies.** It runs `npm pack`, extracts the tarball into `~/.n8n/nodes/node_modules/<pkg>/`, **deletes `devDependencies`, `peerDependencies` and `optionalDependencies` from that `package.json`**, then runs `npm install --install-strategy=shallow` inside the package directory (since May 2025, n8n-io/n8n#15104). Only `dependencies` end up on disk.
+- **Community nodes see n8n's direct dependencies, nothing more.** `load-nodes-and-credentials.js` extends `NODE_PATH` at runtime with n8n's own `node_modules` and calls `Module._initPaths()`, so a `require()` from a community node falls through to whatever is symlinked at `/usr/local/lib/node_modules/n8n/node_modules/`. With pnpm that is the `n8n` package's direct dependencies only; everything else sits in the isolated `.pnpm/` store.
+
+What that means for us:
+
+- **`n8n-workflow`** is a direct n8n dependency → exposed → keep it a peer, marked `optional` in `peerDependenciesMeta`. Under n8n the flag is a no-op (peers are stripped anyway); it stops a manual `npm install` elsewhere from injecting a stale copy, since `n8n-workflow`'s npm `latest` dist-tag has been parked at `2.16.0` since 2026-04-07 while real releases ship under `stable`. Never make it a real dependency — n8n-io/n8n#26404 documents the `instanceof` breakage a nested copy causes.
+- **`@langchain/openai` is not exposed** (it lives only inside `@n8n/n8n-nodes-langchain`, in `.pnpm/`). **`@langchain/core` is** (a direct n8n dependency since 2.28.0), but do not rely on that. Ship both as real runtime `dependencies`, as `n8n-nodes-mcp` does with `@langchain/core`.
+- **Require LangChain lazily** inside `supplyData()` via `requireOptionalModule()` in `shared.ts` (since `0.5.4`), so a missing module fails one sub-node with a clear `NodeOperationError` instead of failing the whole package at load — including the Berget AI action node, which never touches LangChain.
+
+Why LangChain-as-peer ever worked, and why it stopped in mid-2026: until n8n 2.28.x the monorepo `.npmrc` had `shamefully-hoist = true`, so the Docker image's `pnpm deploy` tree hoisted *every* transitive package into `n8n/node_modules/`, and the `NODE_PATH` trick exposed all of it — `@langchain/openai` included. n8n-io/n8n#32569 "Remove shamefully-hoist" (merged 2026-06-25, first shipped in **n8n 2.29.0** on 2026-06-30) ended that. Every version of this package through `0.5.0` had been borrowing `@langchain/openai` from that hoisting by accident. An unchanged install that loaded on ≤ 2.28 fails on ≥ 2.29 with `Cannot find module '@langchain/openai'`, n8n shows *"There is a problem with this package, try uninstalling it then reinstalling"*, and reinstalling cannot help because peers are stripped. That was the September 2026 outage. The `0.5.2`/`0.5.3` changelog entries blamed npm auto-installing peers and a stale `n8n-workflow`; those mechanisms are real for manual installs but were not what broke n8n-managed instances — see the corrections there.
 
 **No `main` field.** Removed in `0.5.3`; it pointed at an `index.js` that never existed. The official `n8n-nodes-starter` declares none either — n8n loads via the `n8n` field paths.
 
@@ -145,8 +153,8 @@ The build script has three steps:
 
 - **TypeScript**: `target: ES2019`, `module: "node16"`, `moduleResolution: "node16"`, `strict: true`. Compiled output lives in `dist/` (gitignored).
 - **Node >= 18** required.
-- **peerDependencies**: `n8n-workflow: "*"`, `@langchain/openai: "*"`, `@langchain/core: "*"`. Wildcards match how the official n8n-nodes-starter does it.
-- **devDependencies**: pin specific recent versions (`n8n-workflow@^2.16.0`, `@langchain/openai@^1.4.3`, `@langchain/core@^1.1.39`, `typescript@^5.3.0`) so builds are reproducible.
+- **peerDependencies**: `n8n-workflow: "*"` only, marked `optional` in `peerDependenciesMeta`. LangChain is a real dependency since `0.5.3` — see the dependency strategy section for why.
+- **devDependencies**: `n8n-workflow@^2.16.0`, `@types/node`, `typescript`. LangChain moved to `dependencies` in `0.5.3`. Note that `n8n-workflow`'s npm `latest` dist-tag is parked at `2.16.0`; install `n8n-workflow@stable` if you need to compile against what current n8n ships.
 - **Axios directly**, not `this.helpers.httpRequest`. This is how the code was originally written and has carried through. It works but misses n8n's built-in retry/proxy/logging. Migrating is future work.
 - **Swedish context leaks**: default speech language `sv`, occasional Swedish comments carried over from earlier versions. Otherwise English.
 - **Markdownlint config** at `.markdownlint.json` disables MD013 (line-length) and sets `MD024 siblings_only: true` so Keep-a-Changelog style `### Added` / `### Changed` under different version headers don't warn.
@@ -200,7 +208,7 @@ Built by `buildSpeakerTranscript()` from `nodes/BergetAi/speech.ts`. This is pur
 
 **Reviewed in 0.4.1 (April 2026)** — full manual source review of all 9 TypeScript files + dependency audit. Summary of what was found and deliberately *not* changed:
 
-**Shipped dependencies** (what actually lands in the user's `node_modules`): `axios` and `form-data` only. Both current, no known advisories. LangChain and `n8n-workflow` are peer deps, inherited from the host n8n install — not shipped by us.
+**Shipped dependencies** (what actually lands in the user's `node_modules`): `axios`, `form-data`, `@langchain/core` and `@langchain/openai` — the latter two since `0.5.3`, after n8n 2.29.0 stopped exposing LangChain to community nodes (see the dependency strategy section). `n8n-workflow` is an optional peer, exposed by the host.
 
 **`npm audit` noise**: flags lodash/expression-runtime in the devDep chain (via `n8n-workflow`'s transitive deps). This is n8n's problem, not ours — it does not affect shipped code. Ignore audit warnings about lodash unless a *direct* dependency starts showing up.
 

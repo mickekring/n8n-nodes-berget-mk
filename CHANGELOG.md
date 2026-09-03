@@ -36,11 +36,22 @@ Verified by deleting `@langchain` from a real install of the built tarball:
 
 Confirmed the compiled output contains no `require("@langchain...")` at module scope in any of the three sub-nodes, that all four nodes load with `@langchain` deleted, and that with LangChain present `supplyData()` still returns `ChatOpenAI`, `OpenAIEmbeddings` and `BergetReranker` exactly as before. No behavioural change on a healthy install.
 
-### Still open
+### Root cause — established after this release (2026-09-03)
 
-The underlying question — why n8n's `npm install` step fails to deliver LangChain on some instances — is unresolved. On an affected server the same procedure run by hand (`npm pack`, extract, strip dev/peer/optional deps, `npm install --install-strategy=shallow`) succeeds and installs all 44 packages, so npm, the registry, disk space and network are all fine there. The remaining difference is that n8n runs that install with its working directory *inside* `node_modules`, at `~/.n8n/nodes/node_modules/n8n-nodes-berget-mk`. Not yet reproduced: a clean n8n 2.33.3 container installs and loads `0.5.3` correctly, including after a failed `0.5.2` and alongside the same set of other community packages.
+The September outage was caused by an n8n change, not by anything in this package's code, and neither the `0.5.2` nor the `0.5.3` explanation below was the actual mechanism. Verified against n8n's source at the affected tags and against a live n8n 2.33.3 container:
+
+1. **n8n never installs peer dependencies.** Since May 2025 (n8n-io/n8n#15104) the installer strips `devDependencies`, `peerDependencies` and `optionalDependencies` from the package's `package.json` before running `npm install --install-strategy=shallow` inside the package directory. `@langchain/openai` and `@langchain/core`, declared as peers through `0.5.0`, were therefore never on disk in any n8n-managed install.
+2. **They resolved anyway, by accident.** `load-nodes-and-credentials.js` extends `NODE_PATH` at runtime with n8n's own `node_modules`, so community nodes can require whatever is symlinked at `/usr/local/lib/node_modules/n8n/node_modules/`. Until mid-2026 the n8n monorepo `.npmrc` had `shamefully-hoist = true`, which made the Docker image's `pnpm deploy` tree hoist *every* transitive package there — LangChain included.
+3. **n8n-io/n8n#32569 "Remove shamefully-hoist"** (merged 2026-06-25, first shipped in **n8n 2.29.0** on 2026-06-30) ended the hoisting. From 2.29.0 only n8n's direct dependencies are exposed: `n8n-workflow` yes; `@langchain/core` yes (a direct dependency since 2.28.0 via n8n-io/n8n#32386); **`@langchain/openai` no** — it exists only inside `.pnpm/`.
+4. **Effect.** An instance upgraded to ≥ 2.29.0 fails to load the unchanged, previously working `0.5.0` files at boot with `Cannot find module '@langchain/openai'`, and the UI shows *"There is a problem with this package, try uninstalling it then reinstalling"*. Reinstalling cannot help, because peers are stripped. Instances still on ≤ 2.28.x kept working — which is why some `0.5.0` installs showed green while others showed the warning, and why a `0.4.10` on 2.21.4 was fine.
+
+`0.5.3` is the actual fix (LangChain as real `dependencies`); `0.5.4` limits the blast radius if LangChain is missing anyway. The stale-`n8n-workflow` / auto-installed-peers mechanism described under `0.5.2` is real for a manual `npm install` but was not what broke n8n-managed instances, since n8n never let npm see the peers.
+
+**Still unexplained:** two 2.33.3 instances also rejected `0.5.3` with the same bare `Cannot find module '@langchain/openai'`, while the identical procedure succeeded in a clean 2.33.3 container — also alongside the same sibling community packages and directly after a failed `0.5.2` — and `0.5.4`, with identical `dependencies` and only lazier requires, then installed on ten instances. Either those two attempts hit something transient (2.33.3 has no install mutex and uses delete-then-rebuild downloads, both fixed in 2.37.x by n8n-io/n8n#36505), or LangChain is still missing there and `0.5.4` merely loads around it. Before treating such an instance as fixed, check `ls ~/.n8n/nodes/node_modules/n8n-nodes-berget-mk/node_modules/` for `@langchain` and exercise the Chat Model sub-node in an Agent.
 
 ## [0.5.3] - 2026-09-03
+
+> **Correction (2026-09-03):** the resolution story below is incomplete. n8n *does* extend `NODE_PATH` to its own `node_modules` — that is exactly how `n8n-workflow` (and, since n8n 2.28, `@langchain/core`) reach community nodes. `@langchain/openai` is the one that is not exposed, and only since n8n 2.29.0. The fix here (LangChain as real dependencies) is correct regardless. See the root-cause section under `0.5.4`.
 
 **Completes the fix started in `0.5.2`, which was half right and broke installs a different way.** `0.5.2` marked all three peers optional; that correctly stopped the harmful `n8n-workflow` duplicate, but LangChain is *not* supplied by n8n, so installs then failed at load time with:
 
@@ -71,6 +82,8 @@ Clean install of the built tarball now yields 41 packages: `@langchain/core`, `@
 Earlier notes in this changelog and in CLAUDE.md warned that shipping our own LangChain would make our `ChatOpenAI` a different class from n8n's and break `instanceof` inside the Agent. In practice that risk does not materialise, and there is no alternative: every release before `0.5.2` already shipped a private LangChain copy — npm auto-installed the `"*"` peers — and the Agent worked for months on exactly that arrangement. The concern is real for `n8n-workflow`, which n8n *does* hand to community nodes; it is moot for LangChain, which it does not.
 
 ## [0.5.2] - 2026-09-03
+
+> **Correction (2026-09-03):** the root cause described below is wrong for n8n-managed installs. n8n strips `peerDependencies` before running `npm install`, so no stale `n8n-workflow` was ever injected by n8n; the outage was n8n 2.29.0 removing `shamefully-hoist`, which had been exposing `@langchain/openai` to community nodes. See the root-cause section under `0.5.4`. The `optional` peer flag introduced here remains correct hygiene for manual installs.
 
 **Fixes community-node installs failing on current n8n.** Symptom: the Community nodes page shows a warning triangle next to `n8n-nodes-berget-mk` with the tooltip *"There is a problem with this package, try uninstalling it then reinstalling to resolve this issue"*, and the four Berget nodes stop working. Reinstalling does not help. Reported across multiple independent n8n instances on n8n `2.33.3`.
 
