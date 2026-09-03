@@ -1,6 +1,6 @@
-import { OpenAIEmbeddings } from '@langchain/openai';
 import {
 	NodeConnectionTypes,
+	NodeOperationError,
 	type ILoadOptionsFunctions,
 	type INodePropertyOptions,
 	type INodeType,
@@ -8,7 +8,12 @@ import {
 	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-import { BERGET_API_BASE_URL, loadModelOptions } from '../BergetAi/shared';
+import {
+	BERGET_API_BASE_URL,
+	LANGCHAIN_MISSING_HINT,
+	loadModelOptions,
+	requireOptionalModule,
+} from '../BergetAi/shared';
 
 export class BergetAiEmbeddingsModel implements INodeType {
 	description: INodeTypeDescription = {
@@ -102,6 +107,19 @@ export class BergetAiEmbeddingsModel implements INodeType {
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+		// Required lazily so a missing LangChain install fails only this sub-node
+		// instead of the whole package. See requireOptionalModule in shared.ts.
+		const langchainOpenAi =
+			requireOptionalModule<typeof import('@langchain/openai')>('@langchain/openai');
+		if (!langchainOpenAi) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Could not load "@langchain/openai"',
+				{ description: LANGCHAIN_MISSING_HINT },
+			);
+		}
+		const { OpenAIEmbeddings } = langchainOpenAi;
+
 		const credentials = await this.getCredentials('bergetAiApi');
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
 		const options = this.getNodeParameter('options', itemIndex, {}) as {

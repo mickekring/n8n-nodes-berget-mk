@@ -2,6 +2,44 @@
 
 All notable changes to `n8n-nodes-berget-mk` are documented here. Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org).
 
+## [0.5.4] - 2026-09-03
+
+**Robustness change, not a fix.** `0.5.3` remains the correct dependency layout and is confirmed working on real instances. This release limits the damage when the LangChain packages are missing from disk anyway, which is still happening on some instances for reasons not yet identified.
+
+### The blast radius problem
+
+All three sub-nodes imported LangChain at the top of the file:
+
+```ts
+import { ChatOpenAI } from '@langchain/openai';                          // Chat Model
+import { OpenAIEmbeddings } from '@langchain/openai';                    // Embeddings Model
+import { BaseDocumentCompressor } from '@langchain/core/retrievers/...'; // Reranker
+```
+
+Those compile to top-level `require()` calls, so a single missing module threw while n8n's loader was requiring the file — and n8n treats that as the **whole package** failing. The Berget AI action node (Chat, Image Analysis, Rerank, Speech to Text) went down too, despite never touching LangChain. One absent dependency took out four nodes, three of which had no need of it.
+
+### Changed
+
+- **LangChain is now required lazily, inside `supplyData()`**, via a new `requireOptionalModule()` helper in [shared.ts](nodes/BergetAi/shared.ts). Type-only imports (`import type`) are kept, since TypeScript erases them and they emit no `require`.
+- **The Reranker's class body moved into a `createBergetReranker()` factory.** `BaseDocumentCompressor` must be a real value to be extended, so a module-scope `class ... extends` would have reintroduced exactly the top-level require this release removes. The class is now defined inside the factory, which receives the two LangChain modules as arguments.
+- **Missing modules raise a `NodeOperationError`** naming the module, with a description pointing at Settings > Community nodes and noting the other Berget AI nodes are unaffected.
+
+### Effect
+
+Verified by deleting `@langchain` from a real install of the built tarball:
+
+| | 0.5.3 | 0.5.4 |
+|---|---|---|
+| Berget AI action node | fails to load | **loads and works** |
+| three LangChain sub-nodes | fail to load | load; clear error when used |
+| package-level status in n8n | whole package fails | package installs |
+
+Confirmed the compiled output contains no `require("@langchain...")` at module scope in any of the three sub-nodes, that all four nodes load with `@langchain` deleted, and that with LangChain present `supplyData()` still returns `ChatOpenAI`, `OpenAIEmbeddings` and `BergetReranker` exactly as before. No behavioural change on a healthy install.
+
+### Still open
+
+The underlying question — why n8n's `npm install` step fails to deliver LangChain on some instances — is unresolved. On an affected server the same procedure run by hand (`npm pack`, extract, strip dev/peer/optional deps, `npm install --install-strategy=shallow`) succeeds and installs all 44 packages, so npm, the registry, disk space and network are all fine there. The remaining difference is that n8n runs that install with its working directory *inside* `node_modules`, at `~/.n8n/nodes/node_modules/n8n-nodes-berget-mk`. Not yet reproduced: a clean n8n 2.33.3 container installs and loads `0.5.3` correctly, including after a failed `0.5.2` and alongside the same set of other community packages.
+
 ## [0.5.3] - 2026-09-03
 
 **Completes the fix started in `0.5.2`, which was half right and broke installs a different way.** `0.5.2` marked all three peers optional; that correctly stopped the harmful `n8n-workflow` duplicate, but LangChain is *not* supplied by n8n, so installs then failed at load time with:

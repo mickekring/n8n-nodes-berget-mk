@@ -1,9 +1,9 @@
 import type { Callbacks } from '@langchain/core/callbacks/manager';
-import { Document, type DocumentInterface } from '@langchain/core/documents';
-import { BaseDocumentCompressor } from '@langchain/core/retrievers/document_compressors';
+import type { DocumentInterface } from '@langchain/core/documents';
 import axios from 'axios';
 import {
 	NodeConnectionTypes,
+	NodeOperationError,
 	type ILoadOptionsFunctions,
 	type INodePropertyOptions,
 	type INodeType,
@@ -11,7 +11,12 @@ import {
 	type ISupplyDataFunctions,
 	type SupplyData,
 } from 'n8n-workflow';
-import { BERGET_API_BASE_URL, loadModelOptions } from '../BergetAi/shared';
+import {
+	BERGET_API_BASE_URL,
+	LANGCHAIN_MISSING_HINT,
+	loadModelOptions,
+	requireOptionalModule,
+} from '../BergetAi/shared';
 
 interface BergetRerankResult {
 	index: number;
@@ -44,78 +49,106 @@ interface BergetRerankResponse {
  * array. We preserve the original LangChain Document metadata across the round
  * trip so downstream consumers don't lose pageContent source references.
  */
-class BergetReranker extends BaseDocumentCompressor {
-	private readonly apiKey: string;
-	private readonly model: string;
-	private readonly topN: number;
-	private readonly timeoutMs: number;
+type DocumentsModule = typeof import('@langchain/core/documents');
+type CompressorsModule = typeof import('@langchain/core/retrievers/document_compressors');
 
-	constructor(params: { apiKey: string; model: string; topN: number; timeoutMs: number }) {
-		super();
-		this.apiKey = params.apiKey;
-		this.model = params.model;
-		this.topN = params.topN;
-		this.timeoutMs = params.timeoutMs;
-	}
+interface BergetRerankerParams {
+	apiKey: string;
+	model: string;
+	topN: number;
+	timeoutMs: number;
+}
 
-	// LangChain's tracer / callback infrastructure may JSON-serialize this
-	// instance for logging. ChatOpenAI / OpenAIEmbeddings opt their apiKey
-	// out via lc_secrets, but BaseDocumentCompressor has no equivalent. We
-	// override toJSON() to be safe — never let the API key end up in a log.
-	toJSON() {
-		return {
-			lc_namespace: ['berget', 'reranker'],
-			model: this.model,
-			topN: this.topN,
-			timeoutMs: this.timeoutMs,
-		};
-	}
+/**
+ * Builds the reranker instance, resolving its LangChain base class at call
+ * time rather than at module load. `BaseDocumentCompressor` has to be a real
+ * value to be extended, so the class body lives inside this factory; declaring
+ * it at module scope would re-introduce the top-level require that made a
+ * missing LangChain install fail the entire package.
+ */
+function createBergetReranker(
+	documentsModule: DocumentsModule,
+	compressorsModule: CompressorsModule,
+	params: BergetRerankerParams,
+) {
+	const { Document } = documentsModule;
+	const { BaseDocumentCompressor } = compressorsModule;
 
-	async compressDocuments(
-		documents: DocumentInterface[],
-		query: string,
-		_callbacks?: Callbacks,
-	): Promise<DocumentInterface[]> {
-		if (documents.length === 0) return [];
+	class BergetReranker extends BaseDocumentCompressor {
+		private readonly apiKey: string;
+		private readonly model: string;
+		private readonly topN: number;
+		private readonly timeoutMs: number;
 
-		const documentStrings = documents.map((d) => d.pageContent);
+		constructor(params: { apiKey: string; model: string; topN: number; timeoutMs: number }) {
+			super();
+			this.apiKey = params.apiKey;
+			this.model = params.model;
+			this.topN = params.topN;
+			this.timeoutMs = params.timeoutMs;
+		}
 
-		const response = await axios.post<BergetRerankResponse>(
-			`${BERGET_API_BASE_URL}/rerank`,
-			{
+		// LangChain's tracer / callback infrastructure may JSON-serialize this
+		// instance for logging. ChatOpenAI / OpenAIEmbeddings opt their apiKey
+		// out via lc_secrets, but BaseDocumentCompressor has no equivalent. We
+		// override toJSON() to be safe — never let the API key end up in a log.
+		toJSON() {
+			return {
+				lc_namespace: ['berget', 'reranker'],
 				model: this.model,
-				query,
-				documents: documentStrings,
-				top_n: Math.min(this.topN, documents.length),
-				return_documents: false,
-			},
-			{
-				headers: {
-					Authorization: `Bearer ${this.apiKey}`,
-					'Content-Type': 'application/json',
-				},
-				timeout: this.timeoutMs,
-			},
-		);
+				topN: this.topN,
+				timeoutMs: this.timeoutMs,
+			};
+		}
 
-		const payload = response.data ?? {};
-		const results: BergetRerankResult[] = payload.results ?? payload.data ?? [];
+		async compressDocuments(
+			documents: DocumentInterface[],
+			query: string,
+			_callbacks?: Callbacks,
+		): Promise<DocumentInterface[]> {
+			if (documents.length === 0) return [];
 
-		return results.map((result) => {
-			const original = documents[result.index];
-			const fallbackText =
-				typeof result.document === 'string'
-					? result.document
-					: result.document?.text ?? '';
-			return new Document({
-				pageContent: original?.pageContent ?? fallbackText,
-				metadata: {
-					...(original?.metadata ?? {}),
-					relevance_score: result.relevance_score,
+			const documentStrings = documents.map((d) => d.pageContent);
+
+			const response = await axios.post<BergetRerankResponse>(
+				`${BERGET_API_BASE_URL}/rerank`,
+				{
+					model: this.model,
+					query,
+					documents: documentStrings,
+					top_n: Math.min(this.topN, documents.length),
+					return_documents: false,
 				},
+				{
+					headers: {
+						Authorization: `Bearer ${this.apiKey}`,
+						'Content-Type': 'application/json',
+					},
+					timeout: this.timeoutMs,
+				},
+			);
+
+			const payload = response.data ?? {};
+			const results: BergetRerankResult[] = payload.results ?? payload.data ?? [];
+
+			return results.map((result) => {
+				const original = documents[result.index];
+				const fallbackText =
+					typeof result.document === 'string'
+						? result.document
+						: result.document?.text ?? '';
+				return new Document({
+					pageContent: original?.pageContent ?? fallbackText,
+					metadata: {
+						...(original?.metadata ?? {}),
+						relevance_score: result.relevance_score,
+					},
+				});
 			});
-		});
+		}
 	}
+
+	return new BergetReranker(params);
 }
 
 export class BergetAiReranker implements INodeType {
@@ -200,7 +233,19 @@ export class BergetAiReranker implements INodeType {
 			timeout?: number;
 		};
 
-		const reranker = new BergetReranker({
+		// Required lazily so a missing LangChain install fails only this sub-node
+		// instead of the whole package. See requireOptionalModule in shared.ts.
+		const documentsModule = requireOptionalModule<DocumentsModule>('@langchain/core/documents');
+		const compressorsModule = requireOptionalModule<CompressorsModule>(
+			'@langchain/core/retrievers/document_compressors',
+		);
+		if (!documentsModule || !compressorsModule) {
+			throw new NodeOperationError(this.getNode(), 'Could not load "@langchain/core"', {
+				description: LANGCHAIN_MISSING_HINT,
+			});
+		}
+
+		const reranker = createBergetReranker(documentsModule, compressorsModule, {
 			apiKey: credentials.apiKey as string,
 			model,
 			topN,

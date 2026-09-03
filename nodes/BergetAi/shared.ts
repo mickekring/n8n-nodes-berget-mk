@@ -8,6 +8,39 @@ import {
 
 export const BERGET_API_BASE_URL = 'https://api.berget.ai/v1';
 
+/**
+ * Loads a LangChain module at call time instead of at module load time.
+ *
+ * The three sub-nodes (Chat Model, Embeddings Model, Reranker) need
+ * `@langchain/openai` / `@langchain/core`, which are declared as real runtime
+ * dependencies (see the dependency strategy section in CLAUDE.md). They are
+ * still not guaranteed to be present: n8n installs a community package by
+ * running `npm install` inside the package's own directory, and if that step
+ * does not deliver them, the modules are simply missing on disk.
+ *
+ * When these were imported at the top of each sub-node file, a missing module
+ * threw while n8n's loader was requiring the file, which failed the *entire*
+ * package — including the Berget AI action node (chat, image, rerank, speech),
+ * which never touches LangChain. Requiring lazily keeps that blast radius to
+ * the one sub-node that actually needs the module, and turns a package-wide
+ * load failure into a clear error at the point of use.
+ *
+ * Returns undefined rather than throwing so callers can raise a
+ * NodeOperationError carrying their own node context.
+ */
+export function requireOptionalModule<T>(specifier: string): T | undefined {
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		return require(specifier) as T;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Shared guidance appended to the error when a LangChain module is missing. */
+export const LANGCHAIN_MISSING_HINT =
+	'This sub-node needs the LangChain packages that ship as dependencies of n8n-nodes-berget-mk, but they were not found on disk. Reinstall the community package in Settings > Community nodes. The other Berget AI nodes are unaffected and continue to work.';
+
 export interface BergetModel {
 	id: string;
 	name?: string;
